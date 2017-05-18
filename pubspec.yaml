@@ -1,0 +1,8 @@
+name: dlox
+description: A Dart port of the Lox language interpreter (http://www.craftinginterpreters.com/).
+author: Ross Kirsling <rkirsling@gmail.com>
+homepage: https://github.com/rkirsling/dlox
+dependencies:
+  charcode: ^1.1.1
+executables:
+  dlox: main

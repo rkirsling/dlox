@@ -1,0 +1,6 @@
+.DS_Store
+.idea/
+.packages
+.pub/
+.vscode/
+packages/
