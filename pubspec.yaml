@@ -4,5 +4,7 @@ author: Ross Kirsling <rkirsling@gmail.com>
 homepage: https://github.com/rkirsling/dlox
 dependencies:
   charcode: ^1.1.1
+dev_dependencies:
+  yaml: ^2.1.12
 executables:
   dlox: main

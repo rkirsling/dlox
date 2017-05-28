@@ -1,0 +1,13 @@
+# Lox's AST model. Used to generate ast.dart.
+Expression:
+  LiteralExpression:
+    - Object value
+  UnaryExpression:
+    - Token operator
+    - Expression operand
+  BinaryExpression:
+    - Expression leftOperand
+    - Token operator
+    - Expression rightOperand
+  ParenthesizedExpression:
+    - Expression expression
