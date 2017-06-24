@@ -35,21 +35,25 @@ class Scanner {
   final ErrorReporter _errorReporter;
   final List<Token> _tokens = [];
   int _offset = 0;
-  int _tokenStart = 0;
   int _line = 1;
   int _lineStart = 0;
+  int _tokenOffset;
+  int _tokenLine;
+  int _tokenColumn;
 
   Scanner(this._source, this._errorReporter);
 
   List<Token> scanTokens() {
     while (!_isAtEnd()) _scanToken();
 
-    _addToken(TokenType.eof);
+    _addEofToken();
     return _tokens;
   }
 
   void _scanToken() {
-    _tokenStart = _offset;
+    _tokenOffset = _offset;
+    _tokenLine = _line;
+    _tokenColumn = _offset - _lineStart + 1;
 
     final next = _advance();
     switch (next) {
@@ -115,15 +119,18 @@ class Scanner {
         } else if (_isAlpha(next)) {
           _scanIdentifierOrKeyword();
         } else {
-          _error('Unexpected character: \'${new String.fromCharCode(next)}\'.');
+          _error('Unexpected character.');
         }
         break;
     }
   }
 
-  void _addToken(TokenType type, [Object value]) {
-    final lexeme = _isAtEnd() ? '' : _source.substring(_tokenStart, _offset);
-    _tokens.add(new Token(type, lexeme, value, _line));
+  void _addToken(TokenType type) {
+    _tokens.add(new Token(type, _lexeme, _tokenLine, _tokenColumn));
+  }
+
+  void _addEofToken() {
+    _tokens.add(new Token(TokenType.eof, '', _line, _offset - _lineStart));
   }
 
   void _skipBlockComment() {
@@ -142,8 +149,7 @@ class Scanner {
       return;
     }
 
-    final value = _source.substring(_tokenStart + 1, _offset - 1);
-    _addToken(TokenType.string, value);
+    _addToken(TokenType.string);
   }
 
   void _scanNumber() {
@@ -155,16 +161,15 @@ class Scanner {
       _advanceWhile(_isDigit);
     }
 
-    final value = double.parse(_source.substring(_tokenStart, _offset));
-    _addToken(TokenType.number, value);
+    _addToken(TokenType.number);
   }
 
   void _scanIdentifierOrKeyword() {
     _advanceWhile(_isAlphaNumeric);
-
-    final lexeme = _source.substring(_tokenStart, _offset);
-    _addToken(_keywordTypes[lexeme] ?? TokenType.identifier);
+    _addToken(_keywordTypes[_lexeme] ?? TokenType.identifier);
   }
+
+  String get _lexeme => _source.substring(_tokenOffset, _offset);
 
   bool _isAtEnd() => _offset >= _source.length;
 
@@ -184,16 +189,16 @@ class Scanner {
     return char;
   }
 
-  bool _advanceIf(int expectedChar) {
-    final isMatch = _peek() == expectedChar;
+  bool _advanceIf(int char) {
+    final isMatch = _peek() == char;
     if (isMatch) _advance();
 
     return isMatch;
   }
 
-  bool _advanceTo(int lastChar) {
+  bool _advanceTo(int char) {
     while (!_isAtEnd()) {
-      if (_advance() == lastChar) return true;
+      if (_advance() == char) return true;
     }
 
     return false;
@@ -204,6 +209,6 @@ class Scanner {
   }
 
   void _error(String message) {
-    _errorReporter.report(_line, _offset - _lineStart, message);
+    _errorReporter.reportStatic(_line, _offset - _lineStart, message);
   }
 }

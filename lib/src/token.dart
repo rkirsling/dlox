@@ -51,11 +51,11 @@ enum TokenType {
 class Token {
   final TokenType type;
   final String lexeme;
-  final Object value;
   final int line;
+  final int column;
 
-  const Token(this.type, this.lexeme, this.value, this.line);
+  const Token(this.type, this.lexeme, this.line, this.column);
 
   @override
-  String toString() => '$type ${value ?? lexeme}';
+  String toString() => lexeme;
 }

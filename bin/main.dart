@@ -35,6 +35,6 @@ int _run(String source) {
   // temp
   for (var token in tokens) print(token);
 
-  final code = errorReporter.hadError ? 65 : 0;
+  final code = errorReporter.hadStaticError ? 65 : 0;
   return code;
 }
