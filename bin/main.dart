@@ -1,6 +1,8 @@
 import 'dart:io';
 
+import 'package:dlox/src/ast_printer.dart';
 import 'package:dlox/src/error_reporter.dart';
+import 'package:dlox/src/parser.dart';
 import 'package:dlox/src/scanner.dart';
 
 void main(List<String> args) {
@@ -31,9 +33,10 @@ void _runPrompt() {
 int _run(String source) {
   final errorReporter = new ErrorReporter();
   final tokens = new Scanner(source, errorReporter).scanTokens();
+  final node = new Parser(tokens, errorReporter).parse();
 
   // temp
-  for (var token in tokens) print(token);
+  if (!errorReporter.hadStaticError) print(new AstPrinter().print(node));
 
   final code = errorReporter.hadStaticError ? 65 : 0;
   return code;
