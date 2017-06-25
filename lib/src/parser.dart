@@ -13,7 +13,18 @@ class Parser {
 
   Expression parse() => _parseExpression();
 
-  Expression _parseExpression() => _parseEquality();
+  Expression _parseExpression() => _parseTernary();
+
+  Expression _parseTernary() {
+    final expression = _parseEquality();
+    if (_peek().type != TokenType.question) return expression;
+
+    _advance();
+    final consequent = _parseExpression();
+    _expect(TokenType.colon, 'Missing colon for ternary operator.');
+    final alternative = _parseExpression();
+    return new TernaryExpression(expression, consequent, alternative);
+  }
 
   Expression _parseEquality() =>
     _parseBinary(_parseComparison, [TokenType.equalEqual, TokenType.bangEqual]);

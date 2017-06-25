@@ -11,6 +11,8 @@ enum TokenType {
   semicolon,
   slash,
   star,
+  question,
+  colon,
 
   // single-character tokens which may combine with '='
   bang,

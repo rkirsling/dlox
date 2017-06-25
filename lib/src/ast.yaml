@@ -9,5 +9,9 @@ Expression:
     - Expression leftOperand
     - Token operator
     - Expression rightOperand
+  TernaryExpression:
+    - Expression condition
+    - Expression consequent
+    - Expression alternative
   ParenthesizedExpression:
     - Expression expression

@@ -5,6 +5,7 @@ abstract class AstVisitor<R> {
   R visitBinaryExpression(BinaryExpression node);
   R visitLiteralExpression(LiteralExpression node);
   R visitParenthesizedExpression(ParenthesizedExpression node);
+  R visitTernaryExpression(TernaryExpression node);
   R visitUnaryExpression(UnaryExpression node);
 }
 
@@ -44,6 +45,18 @@ class ParenthesizedExpression extends Expression {
   @override
   R accept<R>(AstVisitor<R> visitor) =>
     visitor.visitParenthesizedExpression(this);
+}
+
+class TernaryExpression extends Expression {
+  final Expression condition;
+  final Expression consequent;
+  final Expression alternative;
+
+  TernaryExpression(this.condition, this.consequent, this.alternative);
+
+  @override
+  R accept<R>(AstVisitor<R> visitor) =>
+    visitor.visitTernaryExpression(this);
 }
 
 class UnaryExpression extends Expression {
