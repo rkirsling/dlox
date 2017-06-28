@@ -2,6 +2,8 @@
 Expression:
   LiteralExpression:
     - Object value
+  ParenthesizedExpression:
+    - Expression expression
   UnaryExpression:
     - Token operator
     - Expression operand
@@ -13,5 +15,3 @@ Expression:
     - Expression condition
     - Expression consequent
     - Expression alternative
-  ParenthesizedExpression:
-    - Expression expression

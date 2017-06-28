@@ -39,6 +39,10 @@ class Interpreter implements AstVisitor<Object> {
     node.value;
 
   @override
+  Object visitParenthesizedExpression(ParenthesizedExpression node) =>
+    _evaluate(node.expression);
+
+  @override
   Object visitUnaryExpression(UnaryExpression node) {
     final operand = _evaluate(node.operand);
 
@@ -106,10 +110,6 @@ class Interpreter implements AstVisitor<Object> {
   @override
   Object visitTernaryExpression(TernaryExpression node) =>
     _isTruthy(_evaluate(node.condition)) ? _evaluate(node.consequent) : _evaluate(node.alternative);
-
-  @override
-  Object visitParenthesizedExpression(ParenthesizedExpression node) =>
-    _evaluate(node.expression);
 
   Object _evaluate(AstNode node) => node.accept(this);
 }

@@ -68,6 +68,10 @@ class Parser {
   Expression _parsePrimary() {
     final next = _advance();
     switch (next.type) {
+      case TokenType.leftParen:
+        final expression = _parseExpression();
+        _expect(TokenType.rightParen, 'Missing closing parenthesis.');
+        return new ParenthesizedExpression(expression);
       case TokenType.$nil:
         return new LiteralExpression(null);
       case TokenType.$true:
@@ -78,10 +82,6 @@ class Parser {
         return new LiteralExpression(next.lexeme.substring(1, next.lexeme.length - 1));
       case TokenType.number:
         return new LiteralExpression(double.parse(next.lexeme));
-      case TokenType.leftParen:
-        final expression = _parseExpression();
-        _expect(TokenType.rightParen, 'Missing closing parenthesis.');
-        return new ParenthesizedExpression(expression);
       case TokenType.eof:
         throw new LoxError(next, 'Unexpected end of input.');
       default:

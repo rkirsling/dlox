@@ -10,6 +10,10 @@ class AstPrinter implements AstVisitor<String> {
     node.value.toString();
 
   @override
+  String visitParenthesizedExpression(ParenthesizedExpression node) =>
+    _parenthesize([print(node.expression)]);
+
+  @override
   String visitUnaryExpression(UnaryExpression node) =>
     _parenthesize([node.operator.lexeme, print(node.operand)]);
 
@@ -20,8 +24,4 @@ class AstPrinter implements AstVisitor<String> {
   @override
   String visitTernaryExpression(TernaryExpression node) =>
     _parenthesize(['?:', print(node.condition), print(node.consequent), print(node.alternative)]);
-
-  @override
-  String visitParenthesizedExpression(ParenthesizedExpression node) =>
-    _parenthesize([print(node.expression)]);
 }
