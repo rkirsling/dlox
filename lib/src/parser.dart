@@ -11,7 +11,14 @@ class Parser {
 
   Parser(this._tokens, this._errorReporter);
 
-  Expression parse() => _parseExpression();
+  Expression parse() {
+    try {
+      return _parseExpression();
+    } on LoxError catch (error) {
+      _errorReporter.report(error, isDynamic: false);
+      return null;
+    }
+  }
 
   Expression _parseExpression() => _parseTernary();
 
@@ -76,14 +83,10 @@ class Parser {
         _expect(TokenType.rightParen, 'Missing closing parenthesis.');
         return new ParenthesizedExpression(expression);
       case TokenType.eof:
-        _error(next, 'Unexpected end of input.');
-        break;
+        throw new LoxError(next, 'Unexpected end of input.');
       default:
-        _error(next, 'Unexpected token \'${next.lexeme}\'.');
-        break;
+        throw new LoxError(next, 'Unexpected token \'${next.lexeme}\'.');
     }
-
-    return null;
   }
 
   Token _peek() => _tokens[_offset];
@@ -92,10 +95,6 @@ class Parser {
 
   void _expect(TokenType type, String errorMessage) {
     final token = _advance();
-    if (token.type != type) _error(token, errorMessage);
-  }
-
-  void _error(Token token, String message) {
-    _errorReporter.reportStatic(token.line, token.column, message);
+    if (token.type != type) throw new LoxError(token, errorMessage);
   }
 }

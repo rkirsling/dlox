@@ -9,22 +9,15 @@ String _stringify(Object value) =>
   (value is double && value.toInt() == value) ? '${value.toInt()}' : '$value';
 
 double _castNumberOperand(Object value, Token token) {
-  if (value is! double) throw new InterpreterException(token, 'Expected operand to be a number.');
+  if (value is! double) throw new LoxError(token, 'Expected operand to be a number.');
 
   return value;
 }
 
 String _castStringOperand(Object value, Token token) {
-  if (value is! String) throw new InterpreterException(token, 'Expected operand to be a string.');
+  if (value is! String) throw new LoxError(token, 'Expected operand to be a string.');
 
   return value;
-}
-
-class InterpreterException implements Exception {
-  final Token token;
-  final String message;
-
-  InterpreterException(this.token, this.message);
 }
 
 class Interpreter implements AstVisitor<Object> {
@@ -35,8 +28,8 @@ class Interpreter implements AstVisitor<Object> {
   String interpret(AstNode node) {
     try {
       return _stringify(_evaluate(node));
-    } on InterpreterException catch (error) {
-      _errorReporter.reportDynamic(error.token.line, error.token.column, error.message);
+    } on LoxError catch (error) {
+      _errorReporter.report(error, isDynamic: true);
       return null;
     }
   }
@@ -73,7 +66,7 @@ class Interpreter implements AstVisitor<Object> {
     switch (node.operator.type) {
       case TokenType.slash:
         if (rightOperand == 0) {
-          throw new InterpreterException(node.operator, 'Cannot divide by zero.');
+          throw new LoxError(node.operator, 'Cannot divide by zero.');
         }
         return asNumber(leftOperand) / asNumber(rightOperand);
       case TokenType.star:
