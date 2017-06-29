@@ -6,6 +6,14 @@ class AstPrinter implements AstVisitor<String> {
   String print(AstNode node) => node.accept(this);
 
   @override
+  String visitExpressionStatement(ExpressionStatement node) =>
+    _parenthesize([';', print(node.expression)]);
+
+  @override
+  String visitPrintStatement(PrintStatement node) =>
+    _parenthesize(['print', print(node.expression)]);
+
+  @override
   String visitLiteralExpression(LiteralExpression node) =>
     node.value.toString();
 

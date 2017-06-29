@@ -7,6 +7,8 @@ abstract class AstVisitor<R> {
   R visitParenthesizedExpression(ParenthesizedExpression node);
   R visitTernaryExpression(TernaryExpression node);
   R visitUnaryExpression(UnaryExpression node);
+  R visitExpressionStatement(ExpressionStatement node);
+  R visitPrintStatement(PrintStatement node);
 }
 
 abstract class AstNode {
@@ -68,4 +70,26 @@ class UnaryExpression extends Expression {
   @override
   R accept<R>(AstVisitor<R> visitor) =>
     visitor.visitUnaryExpression(this);
+}
+
+abstract class Statement extends AstNode {}
+
+class ExpressionStatement extends Statement {
+  final Expression expression;
+
+  ExpressionStatement(this.expression);
+
+  @override
+  R accept<R>(AstVisitor<R> visitor) =>
+    visitor.visitExpressionStatement(this);
+}
+
+class PrintStatement extends Statement {
+  final Expression expression;
+
+  PrintStatement(this.expression);
+
+  @override
+  R accept<R>(AstVisitor<R> visitor) =>
+    visitor.visitPrintStatement(this);
 }

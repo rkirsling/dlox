@@ -1,4 +1,10 @@
 # Lox's AST model. Used to generate ast.dart.
+Statement:
+  ExpressionStatement:
+    - Expression expression
+  PrintStatement:
+    - Expression expression
+
 Expression:
   LiteralExpression:
     - Object value

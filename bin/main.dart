@@ -33,12 +33,9 @@ void _runPrompt() {
 int _run(String source) {
   final errorReporter = new ErrorReporter();
   final tokens = new Scanner(source, errorReporter).scanTokens();
-  final node = new Parser(tokens, errorReporter).parse();
+  final statements = new Parser(tokens, errorReporter).parse();
   if (errorReporter.hadStaticError) return 65;
 
-  final result = new Interpreter(errorReporter).interpret(node);
-  if (errorReporter.hadDynamicError) return 70;
-
-  stdout.writeln(result);
-  return 0;
+  new Interpreter(stdout.writeln, errorReporter).interpret(statements);
+  return errorReporter.hadDynamicError ? 70 : 0;
 }

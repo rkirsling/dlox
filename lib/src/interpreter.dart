@@ -20,18 +20,30 @@ String _castStringOperand(Object value, Token token) {
   return value;
 }
 
+typedef void PrintFunction(String string);
+
 class Interpreter implements AstVisitor<Object> {
+  final PrintFunction _print;
   final ErrorReporter _errorReporter;
 
-  Interpreter(this._errorReporter);
+  Interpreter(this._print, this._errorReporter);
 
-  String interpret(AstNode node) {
+  void interpret(List<Statement> statements) {
     try {
-      return _stringify(_evaluate(node));
+      statements.forEach(_evaluate);
     } on LoxError catch (error) {
       _errorReporter.report(error, isDynamic: true);
-      return null;
     }
+  }
+
+  @override
+  void visitExpressionStatement(ExpressionStatement node) {
+    _evaluate(node.expression);
+  }
+
+  @override
+  void visitPrintStatement(PrintStatement node) {
+    _print(_stringify(_evaluate(node.expression)));
   }
 
   @override

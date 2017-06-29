@@ -7,17 +7,41 @@ bool _hasTypeIn(Token token, List<TokenType> types) => types.contains(token.type
 class Parser {
   final List<Token> _tokens;
   final ErrorReporter _errorReporter;
-  int _offset = 0;
+  final List<Statement> _statements = [];
+  int _index = 0;
 
   Parser(this._tokens, this._errorReporter);
 
-  Expression parse() {
-    try {
-      return _parseExpression();
-    } on LoxError catch (error) {
-      _errorReporter.report(error, isDynamic: false);
-      return null;
+  List<Statement> parse() {
+    while (!_isAtEnd()) {
+      try {
+        _statements.add(_parseStatement());
+      } on LoxError catch (error) {
+        _errorReporter.report(error, isDynamic: false);
+        _synchronize();
+      }
     }
+
+    return _statements;
+  }
+
+  Statement _parseStatement() {
+    final next = _peek();
+    switch (next.type) {
+      case TokenType.$print:
+        return _parsePrint();
+      default:
+        final expression = _parseExpression();
+        _expect(TokenType.semicolon, 'Missing semicolon.');
+        return new ExpressionStatement(expression);
+    }
+  }
+
+  Statement _parsePrint() {
+    _advance();
+    final expression = _parseExpression();
+    _expect(TokenType.semicolon, 'Missing semicolon.');
+    return new PrintStatement(expression);
   }
 
   Expression _parseExpression() => _parseTernary();
@@ -37,12 +61,12 @@ class Parser {
     _parseBinary(_parseComparison, [TokenType.equalEqual, TokenType.bangEqual]);
 
   Expression _parseComparison() =>
-    _parseBinary(_parseTerm, [TokenType.greater, TokenType.greaterEqual, TokenType.less, TokenType.lessEqual]);
+    _parseBinary(_parseAdditive, [TokenType.greater, TokenType.greaterEqual, TokenType.less, TokenType.lessEqual]);
 
-  Expression _parseTerm() =>
-    _parseBinary(_parseFactor, [TokenType.minus, TokenType.plus]);
+  Expression _parseAdditive() =>
+    _parseBinary(_parseMultiplicative, [TokenType.minus, TokenType.plus]);
 
-  Expression _parseFactor() =>
+  Expression _parseMultiplicative() =>
     _parseBinary(_parseUnary, [TokenType.star, TokenType.slash]);
 
   Expression _parseBinary(Expression parseOperand(), List<TokenType> operators) {
@@ -89,12 +113,36 @@ class Parser {
     }
   }
 
-  Token _peek() => _tokens[_offset];
+  bool _isAtEnd() => _tokens[_index].type == TokenType.eof;
 
-  Token _advance() => _tokens[_offset].type != TokenType.eof ? _tokens[_offset++] : _tokens[_offset];
+  Token _peek() => _tokens[_index];
+
+  Token _advance() => _isAtEnd() ? _tokens[_index] : _tokens[_index++];
 
   void _expect(TokenType type, String errorMessage) {
     final token = _advance();
     if (token.type != type) throw new LoxError(token, errorMessage);
+  }
+
+  void _synchronize() {
+    while (!_isAtEnd()) {
+      switch (_peek().type) {
+        case TokenType.semicolon:
+          _advance();
+          return;
+        case TokenType.$class:
+        case TokenType.$fun:
+        case TokenType.$for:
+        case TokenType.$if:
+        case TokenType.$print:
+        case TokenType.$return:
+        case TokenType.$var:
+        case TokenType.$while:
+          return;
+        default:
+          _advance();
+          break;
+      }
+    }
   }
 }
