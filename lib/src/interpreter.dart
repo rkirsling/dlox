@@ -9,15 +9,15 @@ String _stringify(Object value) =>
   (value is double && value.toInt() == value) ? '${value.toInt()}' : '$value';
 
 double _castNumberOperand(Object value, Token token) {
-  if (value is! double) throw new LoxError(token, 'Expected operand to be a number.');
+  if (value is double) return value;
 
-  return value;
+  throw new LoxError(token, 'Expected operand to be a number.');
 }
 
 String _castStringOperand(Object value, Token token) {
-  if (value is! String) throw new LoxError(token, 'Expected operand to be a string.');
+  if (value is String) return value;
 
-  return value;
+  throw new LoxError(token, 'Expected operand to be a string.');
 }
 
 typedef void PrintFunction(String string);

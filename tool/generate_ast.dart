@@ -5,13 +5,13 @@ import 'package:yaml/yaml.dart';
 
 void main() {
   final input = _getFile('../lib/src/ast.yaml').readAsStringSync();
-  final output = _generateAstModel(loadYaml(input));
+  final output = _generateAstModel(loadYaml(input) as Map<String, Map>);
   _getFile('../lib/src/ast.dart').writeAsStringSync(output);
 }
 
 File _getFile(String path) => new File.fromUri(Platform.script.resolve(path));
 
-String _generateAstModel(Map inputMap) {
+String _generateAstModel(Map<String, Map> inputMap) {
   final preamble = new StringBuffer()
     ..writeln('// DO NOT EDIT -- This file is generated from ast.yaml.')
     ..writeln('import \'token.dart\';');
@@ -32,7 +32,7 @@ String _generateAstModel(Map inputMap) {
       ..writeln('abstract class $baseName extends AstNode {}');
 
     // Sort class names.
-    new SplayTreeMap.from(classes).forEach((className, fields) {
+    new SplayTreeMap<String, List<String>>.from(classes).forEach((className, fields) {
       visitor.writeln('  R visit$className($className node);');
 
       nodes
