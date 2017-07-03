@@ -4,10 +4,15 @@ Statement:
     - Expression expression
   PrintStatement:
     - Expression expression
+  VarStatement:
+    - Token identifier
+    - Expression initializer
 
 Expression:
   LiteralExpression:
     - Object value
+  IdentifierExpression:
+    - Token identifier
   ParenthesizedExpression:
     - Expression expression
   UnaryExpression:

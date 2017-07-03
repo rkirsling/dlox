@@ -14,8 +14,19 @@ class AstPrinter implements AstVisitor<String> {
     _parenthesize(['print', print(node.expression)]);
 
   @override
+  String visitVarStatement(VarStatement node) => _parenthesize(
+    node.initializer == null
+      ? ['var', node.identifier.lexeme]
+      : ['var', node.identifier.lexeme, print(node.initializer)]
+  );
+
+  @override
   String visitLiteralExpression(LiteralExpression node) =>
     node.value.toString();
+
+  @override
+  String visitIdentifierExpression(IdentifierExpression node) =>
+    node.identifier.lexeme;
 
   @override
   String visitParenthesizedExpression(ParenthesizedExpression node) =>

@@ -3,12 +3,14 @@ import 'token.dart';
 
 abstract class AstVisitor<R> {
   R visitBinaryExpression(BinaryExpression node);
+  R visitIdentifierExpression(IdentifierExpression node);
   R visitLiteralExpression(LiteralExpression node);
   R visitParenthesizedExpression(ParenthesizedExpression node);
   R visitTernaryExpression(TernaryExpression node);
   R visitUnaryExpression(UnaryExpression node);
   R visitExpressionStatement(ExpressionStatement node);
   R visitPrintStatement(PrintStatement node);
+  R visitVarStatement(VarStatement node);
 }
 
 abstract class AstNode {
@@ -27,6 +29,16 @@ class BinaryExpression extends Expression {
   @override
   R accept<R>(AstVisitor<R> visitor) =>
     visitor.visitBinaryExpression(this);
+}
+
+class IdentifierExpression extends Expression {
+  final Token identifier;
+
+  IdentifierExpression(this.identifier);
+
+  @override
+  R accept<R>(AstVisitor<R> visitor) =>
+    visitor.visitIdentifierExpression(this);
 }
 
 class LiteralExpression extends Expression {
@@ -92,4 +104,15 @@ class PrintStatement extends Statement {
   @override
   R accept<R>(AstVisitor<R> visitor) =>
     visitor.visitPrintStatement(this);
+}
+
+class VarStatement extends Statement {
+  final Token identifier;
+  final Expression initializer;
+
+  VarStatement(this.identifier, this.initializer);
+
+  @override
+  R accept<R>(AstVisitor<R> visitor) =>
+    visitor.visitVarStatement(this);
 }

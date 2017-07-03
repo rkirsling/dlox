@@ -26,21 +26,26 @@ class Parser {
   }
 
   Statement _parseStatement() {
-    final next = _peek();
-    switch (next.type) {
-      case TokenType.$print:
-        return _parsePrint();
-      default:
-        final expression = _parseExpression();
-        _expect(TokenType.semicolon, 'Missing semicolon.');
-        return new ExpressionStatement(expression);
-    }
+    if (_advanceIf(TokenType.$var)) return _parseVar();
+
+    if (_advanceIf(TokenType.$print)) return _parsePrint();
+
+    final expression = _parseExpression();
+    _expect(TokenType.semicolon, 'Expected semicolon.');
+    return new ExpressionStatement(expression);
+  }
+
+  Statement _parseVar() {
+    final identifier = _peek();
+    _expect(TokenType.identifier, 'Expected identifier after \'var\'.');
+    final initializer = _advanceIf(TokenType.equal) ? _parseExpression() : null;
+    _expect(TokenType.semicolon, 'Expected semicolon.');
+    return new VarStatement(identifier, initializer);
   }
 
   Statement _parsePrint() {
-    _advance();
     final expression = _parseExpression();
-    _expect(TokenType.semicolon, 'Missing semicolon.');
+    _expect(TokenType.semicolon, 'Expected semicolon.');
     return new PrintStatement(expression);
   }
 
@@ -48,11 +53,10 @@ class Parser {
 
   Expression _parseTernary() {
     final expression = _parseEquality();
-    if (_peek().type != TokenType.question) return expression;
+    if (!_advanceIf(TokenType.question)) return expression;
 
-    _advance();
     final consequent = _parseExpression();
-    _expect(TokenType.colon, 'Missing colon for ternary operator.');
+    _expect(TokenType.colon, 'Expected colon for ternary operator.');
     final alternative = _parseExpression();
     return new TernaryExpression(expression, consequent, alternative);
   }
@@ -94,8 +98,10 @@ class Parser {
     switch (next.type) {
       case TokenType.leftParen:
         final expression = _parseExpression();
-        _expect(TokenType.rightParen, 'Missing closing parenthesis.');
+        _expect(TokenType.rightParen, 'Expected closing parenthesis.');
         return new ParenthesizedExpression(expression);
+      case TokenType.identifier:
+        return new IdentifierExpression(next);
       case TokenType.$nil:
         return new LiteralExpression(null);
       case TokenType.$true:
@@ -118,6 +124,13 @@ class Parser {
   Token _peek() => _tokens[_index];
 
   Token _advance() => _isAtEnd() ? _tokens[_index] : _tokens[_index++];
+
+  bool _advanceIf(TokenType type) {
+    final isMatch = _peek().type == type;
+    if (isMatch) _advance();
+
+    return isMatch;
+  }
 
   void _expect(TokenType type, String errorMessage) {
     final token = _advance();
