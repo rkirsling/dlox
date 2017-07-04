@@ -13,6 +13,13 @@ class Environment {
     _values[name] = value;
   }
 
+  void operator []=(Token identifier, Object value) {
+    final name = identifier.lexeme;
+    if (!_values.containsKey(name)) throw new LoxError(identifier, 'Identifier \'$name\' is undefined.');
+
+    _values[name] = value;
+  }
+
   Object operator [](Token identifier) {
     final name = identifier.lexeme;
     if (!_values.containsKey(name)) throw new LoxError(identifier, 'Identifier \'$name\' is undefined.');

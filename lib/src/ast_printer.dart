@@ -43,4 +43,8 @@ class AstPrinter implements AstVisitor<String> {
   @override
   String visitTernaryExpression(TernaryExpression node) =>
     _parenthesize(['?:', print(node.condition), print(node.consequent), print(node.alternative)]);
+
+  @override
+  String visitAssignmentExpression(AssignmentExpression node) =>
+    _parenthesize(['=', node.identifier.lexeme, print(node.rhs)]);
 }

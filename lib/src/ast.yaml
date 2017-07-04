@@ -26,3 +26,6 @@ Expression:
     - Expression condition
     - Expression consequent
     - Expression alternative
+  AssignmentExpression:
+    - Token identifier
+    - Expression rhs

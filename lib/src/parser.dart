@@ -49,15 +49,26 @@ class Parser {
     return new PrintStatement(expression);
   }
 
-  Expression _parseExpression() => _parseTernary();
+  Expression _parseExpression() => _parseAssignment();
+
+  Expression _parseAssignment() {
+    final expression = _parseTernary();
+    if (_peek().type != TokenType.equal) return expression;
+
+    final operator = _advance();
+    final rhs = _parseAssignment();
+    if (expression is IdentifierExpression) return new AssignmentExpression(expression.identifier, rhs);
+
+    throw new LoxError(operator, 'Invalid left-hand side of assignment.');
+  }
 
   Expression _parseTernary() {
     final expression = _parseEquality();
     if (!_advanceIf(TokenType.question)) return expression;
 
-    final consequent = _parseExpression();
+    final consequent = _parseAssignment();
     _expect(TokenType.colon, 'Expected colon for ternary operator.');
-    final alternative = _parseExpression();
+    final alternative = _parseAssignment();
     return new TernaryExpression(expression, consequent, alternative);
   }
 

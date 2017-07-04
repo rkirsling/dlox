@@ -133,5 +133,12 @@ class Interpreter implements AstVisitor<Object> {
   Object visitTernaryExpression(TernaryExpression node) =>
     _isTruthy(_evaluate(node.condition)) ? _evaluate(node.consequent) : _evaluate(node.alternative);
 
+  @override
+  Object visitAssignmentExpression(AssignmentExpression node) {
+    final value = _evaluate(node.rhs);
+    _environment[node.identifier] = value;
+    return value;
+  }
+
   Object _evaluate(AstNode node) => node.accept(this);
 }

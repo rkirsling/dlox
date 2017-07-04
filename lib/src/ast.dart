@@ -2,6 +2,7 @@
 import 'token.dart';
 
 abstract class AstVisitor<R> {
+  R visitAssignmentExpression(AssignmentExpression node);
   R visitBinaryExpression(BinaryExpression node);
   R visitIdentifierExpression(IdentifierExpression node);
   R visitLiteralExpression(LiteralExpression node);
@@ -18,6 +19,17 @@ abstract class AstNode {
 }
 
 abstract class Expression extends AstNode {}
+
+class AssignmentExpression extends Expression {
+  final Token identifier;
+  final Expression rhs;
+
+  AssignmentExpression(this.identifier, this.rhs);
+
+  @override
+  R accept<R>(AstVisitor<R> visitor) =>
+    visitor.visitAssignmentExpression(this);
+}
 
 class BinaryExpression extends Expression {
   final Expression leftOperand;
