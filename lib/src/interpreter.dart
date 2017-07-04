@@ -20,8 +20,6 @@ String _castStringOperand(Object value, Token token) {
   throw new LoxError(token, 'Expected operand to be a string.');
 }
 
-typedef void PrintFunction(String string);
-
 class Interpreter implements AstVisitor<Object> {
   final PrintFunction _print;
   final ErrorReporter _errorReporter;

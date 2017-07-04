@@ -1,6 +1,10 @@
-import 'dart:io';
-
 import 'token.dart';
+
+const _redText = '\u{1B}[31m';
+const _greyText = '\u{1B}[90m';
+const _resetText = '\u{1B}[0m';
+
+typedef void PrintFunction(String string);
 
 class LoxError implements Exception {
   final Token token;
@@ -10,30 +14,24 @@ class LoxError implements Exception {
 }
 
 class ErrorReporter {
-  static const _redText = '\u{1B}[31m';
-  static const _greyText = '\u{1B}[90m';
-  static const _resetText = '\u{1B}[0m';
+  final PrintFunction _print;
+  bool _hadError = false;
 
-  bool hadStaticError = false;
-  bool hadDynamicError = false;
+  ErrorReporter(this._print);
 
-  ErrorReporter();
+  bool get hadError => _hadError;
 
   void report(LoxError error, {bool isDynamic = false}) {
-    if (isDynamic) {
-      reportDynamic(error.token.line, error.token.column, error.message);
-    } else {
-      reportStatic(error.token.line, error.token.column, error.message);
-    }
+    reportAtPosition(error.token.line, error.token.column, error.message, isDynamic: isDynamic);
   }
 
-  void reportStatic(int line, int column, String message) {
-    stderr.writeln('$_redText  syntax error$_resetText : $message $_greyText($line:$column)$_resetText');
-    hadStaticError = true;
+  void reportAtPosition(int line, int column, String message, {bool isDynamic = false}) {
+    final stage = isDynamic ? 'runtime' : ' syntax';
+    _print('$_redText $stage error $_resetText: $message $_greyText($line:$column)$_resetText');
+    _hadError = true;
   }
 
-  void reportDynamic(int line, int column, String message) {
-    stderr.writeln('$_redText runtime error$_resetText : $message $_greyText($line:$column)$_resetText');
-    hadDynamicError = true;
+  void reset() {
+    _hadError = false;
   }
 }

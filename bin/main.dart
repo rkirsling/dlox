@@ -5,6 +5,9 @@ import 'package:dlox/src/interpreter.dart';
 import 'package:dlox/src/parser.dart';
 import 'package:dlox/src/scanner.dart';
 
+final _errorReporter = new ErrorReporter(stderr.writeln);
+final _interpreter = new Interpreter(stdout.writeln, _errorReporter);
+
 void main(List<String> args) {
   if (args.length > 1) {
     stderr.writeln('Usage: dlox [<path>]');
@@ -27,15 +30,15 @@ void _runPrompt() {
   for (;;) {
     stdout.write('dlox> ');
     _run(stdin.readLineSync());
+    _errorReporter.reset();
   }
 }
 
 int _run(String source) {
-  final errorReporter = new ErrorReporter();
-  final tokens = new Scanner(source, errorReporter).scanTokens();
-  final statements = new Parser(tokens, errorReporter).parse();
-  if (errorReporter.hadStaticError) return 65;
+  final tokens = new Scanner(source, _errorReporter).scanTokens();
+  final statements = new Parser(tokens, _errorReporter).parse();
+  if (_errorReporter.hadError) return 65;
 
-  new Interpreter(stdout.writeln, errorReporter).interpret(statements);
-  return errorReporter.hadDynamicError ? 70 : 0;
+  _interpreter.interpret(statements);
+  return _errorReporter.hadError ? 70 : 0;
 }

@@ -215,6 +215,6 @@ class Scanner {
   }
 
   void _error(String message) {
-    _errorReporter.reportStatic(_line, _offset - _lineStart, message);
+    _errorReporter.reportAtPosition(_line, _offset - _lineStart, message);
   }
 }
