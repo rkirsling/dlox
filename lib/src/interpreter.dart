@@ -1,4 +1,5 @@
 import 'ast.dart';
+import 'environment.dart';
 import 'error_reporter.dart';
 import 'token.dart';
 
@@ -23,6 +24,7 @@ String _castStringOperand(Object value, Token token) {
 class Interpreter implements AstVisitor<Object> {
   final PrintFunction _print;
   final ErrorReporter _errorReporter;
+  final Environment _environment = new Environment();
 
   Interpreter(this._print, this._errorReporter);
 
@@ -45,8 +47,18 @@ class Interpreter implements AstVisitor<Object> {
   }
 
   @override
+  void visitVarStatement(VarStatement node) {
+    final value = (node.initializer != null) ? _evaluate(node.initializer) : null;
+    _environment.define(node.identifier, value);
+  }
+
+  @override
   Object visitLiteralExpression(LiteralExpression node) =>
     node.value;
+
+  @override
+  Object visitIdentifierExpression(IdentifierExpression node) =>
+    _environment[node.identifier];
 
   @override
   Object visitParenthesizedExpression(ParenthesizedExpression node) =>
