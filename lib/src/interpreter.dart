@@ -47,6 +47,16 @@ class Interpreter implements AstVisitor<Object> {
   }
 
   @override
+  void visitBlockStatement(BlockStatement node) {
+    _environment.push();
+    try {
+      node.statements.forEach(_evaluate);
+    } finally {
+      _environment.pop();
+    }
+  }
+
+  @override
   void visitVarStatement(VarStatement node) {
     final value = (node.initializer != null) ? _evaluate(node.initializer) : null;
     _environment.define(node.identifier, value);

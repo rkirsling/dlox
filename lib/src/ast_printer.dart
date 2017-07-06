@@ -14,6 +14,10 @@ class AstPrinter implements AstVisitor<String> {
     _parenthesize(['print', print(node.expression)]);
 
   @override
+  String visitBlockStatement(BlockStatement node) =>
+    _parenthesize(['{}']..addAll(node.statements.map(print)));
+
+  @override
   String visitVarStatement(VarStatement node) => _parenthesize(
     node.initializer == null
       ? ['var', node.identifier.lexeme]
@@ -30,7 +34,7 @@ class AstPrinter implements AstVisitor<String> {
 
   @override
   String visitParenthesizedExpression(ParenthesizedExpression node) =>
-    _parenthesize([print(node.expression)]);
+    _parenthesize(['', print(node.expression)]);
 
   @override
   String visitUnaryExpression(UnaryExpression node) =>

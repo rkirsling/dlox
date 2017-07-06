@@ -9,6 +9,7 @@ abstract class AstVisitor<R> {
   R visitParenthesizedExpression(ParenthesizedExpression node);
   R visitTernaryExpression(TernaryExpression node);
   R visitUnaryExpression(UnaryExpression node);
+  R visitBlockStatement(BlockStatement node);
   R visitExpressionStatement(ExpressionStatement node);
   R visitPrintStatement(PrintStatement node);
   R visitVarStatement(VarStatement node);
@@ -97,6 +98,16 @@ class UnaryExpression extends Expression {
 }
 
 abstract class Statement extends AstNode {}
+
+class BlockStatement extends Statement {
+  final List<Statement> statements;
+
+  BlockStatement(this.statements);
+
+  @override
+  R accept<R>(AstVisitor<R> visitor) =>
+    visitor.visitBlockStatement(this);
+}
 
 class ExpressionStatement extends Statement {
   final Expression expression;

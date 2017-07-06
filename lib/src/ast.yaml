@@ -4,6 +4,8 @@ Statement:
     - Expression expression
   PrintStatement:
     - Expression expression
+  BlockStatement:
+    - List<Statement> statements
   VarStatement:
     - Token identifier
     - Expression initializer

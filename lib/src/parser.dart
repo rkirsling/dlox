@@ -13,26 +13,21 @@ class Parser {
   Parser(this._tokens, this._errorReporter);
 
   List<Statement> parse() {
-    while (!_isAtEnd()) {
-      try {
-        _statements.add(_parseStatement());
-      } on LoxError catch (error) {
-        _errorReporter.report(error, isDynamic: false);
-        _synchronize();
-      }
-    }
+    while (!_isAtEnd()) _statements.add(_parseStatement());
 
     return _statements;
   }
 
   Statement _parseStatement() {
-    if (_advanceIf(TokenType.$var)) return _parseVar();
+    try {
+      if (_advanceIf(TokenType.$var)) return _parseVar();
 
-    if (_advanceIf(TokenType.$print)) return _parsePrint();
-
-    final expression = _parseExpression();
-    _expect(TokenType.semicolon, 'Expected semicolon.');
-    return new ExpressionStatement(expression);
+      return _parseNonDeclaration();
+    } on LoxError catch (error) {
+      _errorReporter.report(error, isDynamic: false);
+      _synchronize();
+      return null;
+    }
   }
 
   Statement _parseVar() {
@@ -41,6 +36,24 @@ class Parser {
     final initializer = _advanceIf(TokenType.equal) ? _parseExpression() : null;
     _expect(TokenType.semicolon, 'Expected semicolon.');
     return new VarStatement(identifier, initializer);
+  }
+
+  Statement _parseNonDeclaration() {
+    if (_advanceIf(TokenType.leftBrace)) return _parseBlock();
+
+    if (_advanceIf(TokenType.$print)) return _parsePrint();
+
+    final expression = _parseExpression();
+    _expect(TokenType.semicolon, 'Expected semicolon.');
+    return new ExpressionStatement(expression);
+  }
+
+  Statement _parseBlock() {
+    final statements = <Statement>[];
+    while (_peek().type != TokenType.rightBrace && !_isAtEnd()) statements.add(_parseStatement());
+
+    _expect(TokenType.rightBrace, 'Expected closing brace.');
+    return new BlockStatement(statements);
   }
 
   Statement _parsePrint() {
