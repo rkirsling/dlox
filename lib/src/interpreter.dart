@@ -5,6 +5,10 @@ import 'token.dart';
 
 bool _isTruthy(Object value) => (value is bool) ? value : value != null;
 
+bool _canShortCircuit(TokenType type, Object value) =>
+  type == TokenType.$or && _isTruthy(value) ||
+  type == TokenType.$and && !_isTruthy(value);
+
 String _stringify(Object value) =>
   (value == null) ? 'nil' :
   (value is double && value.toInt() == value) ? '${value.toInt()}' : '$value';
@@ -47,6 +51,20 @@ class Interpreter implements AstVisitor<Object> {
   }
 
   @override
+  void visitIfStatement(IfStatement node) {
+    if (_isTruthy(_evaluate(node.condition))) {
+      _evaluate(node.consequent);
+    } else if (node.alternative != null) {
+      _evaluate(node.alternative);
+    }
+  }
+
+  @override
+  void visitWhileStatement(WhileStatement node) {
+    while (_isTruthy(_evaluate(node.condition))) _evaluate(node.body);
+  }
+
+  @override
   void visitBlockStatement(BlockStatement node) {
     _environment.push();
     try {
@@ -58,7 +76,7 @@ class Interpreter implements AstVisitor<Object> {
 
   @override
   void visitVarStatement(VarStatement node) {
-    final value = (node.initializer != null) ? _evaluate(node.initializer) : null;
+    final value = (node.initializer == null) ? null : _evaluate(node.initializer);
     _environment.define(node.identifier, value);
   }
 
@@ -94,12 +112,18 @@ class Interpreter implements AstVisitor<Object> {
   @override
   Object visitBinaryExpression(BinaryExpression node) {
     final leftOperand = _evaluate(node.leftOperand);
+    if (_canShortCircuit(node.operator.type, leftOperand)) return leftOperand;
+
     final rightOperand = _evaluate(node.rightOperand);
 
     double asNumber(Object value) => _castNumberOperand(value, node.operator);
     String asString(Object value) => _castStringOperand(value, node.operator);
 
     switch (node.operator.type) {
+      case TokenType.$or:
+      case TokenType.$and:
+        // Since we couldn't short circuit...
+        return rightOperand;
       case TokenType.slash:
         if (rightOperand == 0) {
           throw new LoxError(node.operator, 'Cannot divide by zero.');

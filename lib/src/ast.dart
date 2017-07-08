@@ -11,8 +11,10 @@ abstract class AstVisitor<R> {
   R visitUnaryExpression(UnaryExpression node);
   R visitBlockStatement(BlockStatement node);
   R visitExpressionStatement(ExpressionStatement node);
+  R visitIfStatement(IfStatement node);
   R visitPrintStatement(PrintStatement node);
   R visitVarStatement(VarStatement node);
+  R visitWhileStatement(WhileStatement node);
 }
 
 abstract class AstNode {
@@ -119,6 +121,18 @@ class ExpressionStatement extends Statement {
     visitor.visitExpressionStatement(this);
 }
 
+class IfStatement extends Statement {
+  final Expression condition;
+  final Statement consequent;
+  final Statement alternative;
+
+  IfStatement(this.condition, this.consequent, this.alternative);
+
+  @override
+  R accept<R>(AstVisitor<R> visitor) =>
+    visitor.visitIfStatement(this);
+}
+
 class PrintStatement extends Statement {
   final Expression expression;
 
@@ -138,4 +152,15 @@ class VarStatement extends Statement {
   @override
   R accept<R>(AstVisitor<R> visitor) =>
     visitor.visitVarStatement(this);
+}
+
+class WhileStatement extends Statement {
+  final Expression condition;
+  final Statement body;
+
+  WhileStatement(this.condition, this.body);
+
+  @override
+  R accept<R>(AstVisitor<R> visitor) =>
+    visitor.visitWhileStatement(this);
 }

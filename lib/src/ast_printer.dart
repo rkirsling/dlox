@@ -3,7 +3,7 @@ import 'ast.dart';
 String _parenthesize(List<String> parts) => '(' + parts.join(' ') + ')';
 
 class AstPrinter implements AstVisitor<String> {
-  String print(AstNode node) => node.accept(this);
+  String print(AstNode node) => node == null ? null : node.accept(this);
 
   @override
   String visitExpressionStatement(ExpressionStatement node) =>
@@ -14,15 +14,20 @@ class AstPrinter implements AstVisitor<String> {
     _parenthesize(['print', print(node.expression)]);
 
   @override
+  String visitIfStatement(IfStatement node) =>
+    _parenthesize(['if', print(node.condition), print(node.consequent), print(node.alternative)]);
+
+  @override
+  String visitWhileStatement(WhileStatement node) =>
+    _parenthesize(['while', print(node.condition), print(node.body)]);
+
+  @override
   String visitBlockStatement(BlockStatement node) =>
     _parenthesize(['{}']..addAll(node.statements.map(print)));
 
   @override
-  String visitVarStatement(VarStatement node) => _parenthesize(
-    node.initializer == null
-      ? ['var', node.identifier.lexeme]
-      : ['var', node.identifier.lexeme, print(node.initializer)]
-  );
+  String visitVarStatement(VarStatement node) =>
+    _parenthesize(['var', node.identifier.lexeme, print(node.initializer)]);
 
   @override
   String visitLiteralExpression(LiteralExpression node) =>

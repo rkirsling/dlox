@@ -4,6 +4,13 @@ Statement:
     - Expression expression
   PrintStatement:
     - Expression expression
+  IfStatement:
+    - Expression condition
+    - Statement consequent
+    - Statement alternative
+  WhileStatement:
+    - Expression condition
+    - Statement body
   BlockStatement:
     - List<Statement> statements
   VarStatement:
