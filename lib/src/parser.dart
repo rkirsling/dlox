@@ -9,6 +9,7 @@ class Parser {
   final ErrorReporter _errorReporter;
   final List<Statement> _statements = [];
   int _index = 0;
+  int _loopDepth = 0;
 
   Parser(this._tokens, this._errorReporter);
 
@@ -38,6 +39,7 @@ class Parser {
 
   Statement _parseNonDeclaration() =>
     _advanceIf(TokenType.leftBrace) ? _parseBlock() :
+    (_peek().type == TokenType.$break) ? _parseBreak() :
     _advanceIf(TokenType.$for) ? _parseFor() :
     _advanceIf(TokenType.$while) ? _parseWhile() :
     _advanceIf(TokenType.$if) ? _parseIf() :
@@ -49,6 +51,14 @@ class Parser {
 
     _expect(TokenType.rightBrace, 'Expected closing brace.');
     return new BlockStatement(statements);
+  }
+
+  Statement _parseBreak() {
+    final token = _advance();
+    if (_loopDepth < 1) throw new LoxError(token, '\'break\' used outside of loop.');
+
+    _expect(TokenType.semicolon, 'Expected semicolon.');
+    return new BreakStatement();
   }
 
   /// Desugars `for` into `while`.
@@ -64,7 +74,9 @@ class Parser {
     final increment = (_peek().type == TokenType.rightParen) ? null : new ExpressionStatement(_parseExpression());
     _expect(TokenType.rightParen, 'Expected closing parenthesis.');
 
+    _loopDepth++;
     final rawBody = _parseNonDeclaration();
+    _loopDepth--;
     final body = (increment == null) ? rawBody : new BlockStatement([rawBody, increment]);
 
     final rawWhile = new WhileStatement(condition, body);
@@ -76,7 +88,9 @@ class Parser {
     final condition = _parseExpression();
     _expect(TokenType.rightParen, 'Expected closing parenthesis.');
 
+    _loopDepth++;
     final body = _parseNonDeclaration();
+    _loopDepth--;
     return new WhileStatement(condition, body);
   }
 
@@ -213,6 +227,7 @@ class Parser {
         case TokenType.semicolon:
           _advance();
           return;
+        case TokenType.$break:
         case TokenType.$class:
         case TokenType.$fun:
         case TokenType.$for:

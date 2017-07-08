@@ -39,13 +39,17 @@ String _generateAstModel(Map<String, Map> inputMap) {
         ..writeln()
         ..writeln('class $className extends $baseName {');
 
-      for (final field in fields) nodes.writeln('  final $field;');
+      if (fields.isNotEmpty) {
+        for (final field in fields) nodes.writeln('  final $field;');
 
-      final parameterList = fields.map((field) => 'this.' + field.split(' ')[1]).join(', ');
+        final parameterList = fields.map((field) => 'this.' + field.split(' ')[1]).join(', ');
+        nodes
+          ..writeln()
+          ..writeln('  $className($parameterList);')
+          ..writeln();
+      }
+
       nodes
-        ..writeln()
-        ..writeln('  $className($parameterList);')
-        ..writeln()
         ..writeln('  @override')
         ..writeln('  R accept<R>(AstVisitor<R> visitor) =>')
         ..writeln('    visitor.visit$className(this);')

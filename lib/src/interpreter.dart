@@ -25,6 +25,8 @@ String _castStringOperand(Object value, Token token) {
   throw new LoxError(token, 'Expected operand to be a string.');
 }
 
+class Break implements Exception {}
+
 class Interpreter implements AstVisitor<Object> {
   final PrintFunction _print;
   final ErrorReporter _errorReporter;
@@ -61,7 +63,18 @@ class Interpreter implements AstVisitor<Object> {
 
   @override
   void visitWhileStatement(WhileStatement node) {
-    while (_isTruthy(_evaluate(node.condition))) _evaluate(node.body);
+    while (_isTruthy(_evaluate(node.condition))) {
+      try {
+        _evaluate(node.body);
+      } on Break {
+        break;
+      }
+    }
+  }
+
+  @override
+  void visitBreakStatement(BreakStatement node) {
+    throw new Break();
   }
 
   @override

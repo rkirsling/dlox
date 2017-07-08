@@ -31,6 +31,7 @@ enum TokenType {
 
   // keywords
   $and,
+  $break,
   $class,
   $else,
   $false,

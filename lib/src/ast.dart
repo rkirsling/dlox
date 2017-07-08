@@ -10,6 +10,7 @@ abstract class AstVisitor<R> {
   R visitTernaryExpression(TernaryExpression node);
   R visitUnaryExpression(UnaryExpression node);
   R visitBlockStatement(BlockStatement node);
+  R visitBreakStatement(BreakStatement node);
   R visitExpressionStatement(ExpressionStatement node);
   R visitIfStatement(IfStatement node);
   R visitPrintStatement(PrintStatement node);
@@ -109,6 +110,12 @@ class BlockStatement extends Statement {
   @override
   R accept<R>(AstVisitor<R> visitor) =>
     visitor.visitBlockStatement(this);
+}
+
+class BreakStatement extends Statement {
+  @override
+  R accept<R>(AstVisitor<R> visitor) =>
+    visitor.visitBreakStatement(this);
 }
 
 class ExpressionStatement extends Statement {

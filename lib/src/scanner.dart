@@ -13,6 +13,7 @@ bool _isAlphaNumeric(int char) => _isAlpha(char) || _isDigit(char);
 
 const Map<String, TokenType> _keywordTypes = const {
   'and': TokenType.$and,
+  'break': TokenType.$break,
   'class': TokenType.$class,
   'else': TokenType.$else,
   'false': TokenType.$false,

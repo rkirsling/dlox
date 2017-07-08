@@ -11,6 +11,8 @@ Statement:
   WhileStatement:
     - Expression condition
     - Statement body
+  BreakStatement:
+    []
   BlockStatement:
     - List<Statement> statements
   VarStatement:
