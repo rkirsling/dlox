@@ -2,8 +2,6 @@ import 'ast.dart';
 import 'error_reporter.dart';
 import 'token.dart';
 
-bool _hasTypeIn(Token token, List<TokenType> types) => types.contains(token.type);
-
 class Parser {
   final List<Token> _tokens;
   final ErrorReporter _errorReporter;
@@ -38,20 +36,12 @@ class Parser {
   }
 
   Statement _parseNonDeclaration() =>
-    _advanceIf(TokenType.leftBrace) ? _parseBlock() :
-    (_peek().type == TokenType.$break) ? _parseBreak() :
+    _peekIs(TokenType.$break) ? _parseBreak() :
     _advanceIf(TokenType.$for) ? _parseFor() :
     _advanceIf(TokenType.$while) ? _parseWhile() :
     _advanceIf(TokenType.$if) ? _parseIf() :
+    _advanceIf(TokenType.leftBrace) ? _parseBlock() :
     _advanceIf(TokenType.$print) ? _parsePrint() : _parseExpressionStatement();
-
-  Statement _parseBlock() {
-    final statements = <Statement>[];
-    while (_peek().type != TokenType.rightBrace && !_isAtEnd()) statements.add(_parseStatement());
-
-    _expect(TokenType.rightBrace, 'Expected closing brace.');
-    return new BlockStatement(statements);
-  }
 
   Statement _parseBreak() {
     final token = _advance();
@@ -68,10 +58,10 @@ class Parser {
       _advanceIf(TokenType.semicolon) ? null :
       _advanceIf(TokenType.$var) ? _parseVar() : _parseExpressionStatement();
 
-    final condition = (_peek().type == TokenType.semicolon) ? new LiteralExpression(true) : _parseExpression();
+    final condition = _peekIs(TokenType.semicolon) ? new LiteralExpression(true) : _parseExpression();
     _expect(TokenType.semicolon, 'Expected semicolon.');
 
-    final increment = (_peek().type == TokenType.rightParen) ? null : new ExpressionStatement(_parseExpression());
+    final increment = _peekIs(TokenType.rightParen) ? null : new ExpressionStatement(_parseExpression());
     _expect(TokenType.rightParen, 'Expected closing parenthesis.');
 
     _loopDepth++;
@@ -104,6 +94,14 @@ class Parser {
     return new IfStatement(condition, consequent, alternative);
   }
 
+  Statement _parseBlock() {
+    final statements = <Statement>[];
+    while (!_peekIs(TokenType.rightBrace) && !_isAtEnd()) statements.add(_parseStatement());
+
+    _expect(TokenType.rightBrace, 'Expected closing brace.');
+    return new BlockStatement(statements);
+  }
+
   Statement _parsePrint() {
     final expression = _parseExpression();
     _expect(TokenType.semicolon, 'Expected semicolon.');
@@ -120,7 +118,7 @@ class Parser {
 
   Expression _parseAssignment() {
     final expression = _parseTernary();
-    if (_peek().type != TokenType.equal) return expression;
+    if (!_peekIs(TokenType.equal)) return expression;
 
     final operator = _advance();
     final rhs = _parseAssignment();
@@ -160,7 +158,7 @@ class Parser {
   Expression _parseBinary(Expression parseOperand(), List<TokenType> operators) {
     var expression = parseOperand();
 
-    while (_hasTypeIn(_peek(), operators)) {
+    while (_peekIsIn(operators)) {
       final operator = _advance();
       final rightOperand = parseOperand();
       expression = new BinaryExpression(expression, operator, rightOperand);
@@ -170,7 +168,7 @@ class Parser {
   }
 
   Expression _parseUnary() {
-    if (!_hasTypeIn(_peek(), [TokenType.bang, TokenType.minus])) return _parsePrimary();
+    if (!_peekIsIn([TokenType.bang, TokenType.minus])) return _parsePrimary();
 
     final operator = _advance();
     final operand = _parseUnary();
@@ -206,6 +204,10 @@ class Parser {
   bool _isAtEnd() => _tokens[_index].type == TokenType.eof;
 
   Token _peek() => _tokens[_index];
+
+  bool _peekIs(TokenType type) => _peek().type == type;
+
+  bool _peekIsIn(List<TokenType> types) => types.contains(_peek().type);
 
   Token _advance() => _isAtEnd() ? _tokens[_index] : _tokens[_index++];
 

@@ -53,6 +53,16 @@ class Interpreter implements AstVisitor<Object> {
   }
 
   @override
+  void visitBlockStatement(BlockStatement node) {
+    _environment.push();
+    try {
+      node.statements.forEach(_evaluate);
+    } finally {
+      _environment.pop();
+    }
+  }
+
+  @override
   void visitIfStatement(IfStatement node) {
     if (_isTruthy(_evaluate(node.condition))) {
       _evaluate(node.consequent);
@@ -75,16 +85,6 @@ class Interpreter implements AstVisitor<Object> {
   @override
   void visitBreakStatement(BreakStatement node) {
     throw new Break();
-  }
-
-  @override
-  void visitBlockStatement(BlockStatement node) {
-    _environment.push();
-    try {
-      node.statements.forEach(_evaluate);
-    } finally {
-      _environment.pop();
-    }
   }
 
   @override
