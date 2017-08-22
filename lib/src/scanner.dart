@@ -211,7 +211,7 @@ class Scanner {
     return false;
   }
 
-  void _advanceWhile(bool predicate(int char)) {
+  void _advanceWhile(bool Function(int) predicate) {
     while (predicate(_peek())) _advance();
   }
 

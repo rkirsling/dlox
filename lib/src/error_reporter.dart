@@ -4,8 +4,6 @@ const _redText = '\u{1B}[31m';
 const _greyText = '\u{1B}[90m';
 const _resetText = '\u{1B}[0m';
 
-typedef void PrintFunction(String string);
-
 class LoxError implements Exception {
   final Token token;
   final String message;
@@ -14,7 +12,7 @@ class LoxError implements Exception {
 }
 
 class ErrorReporter {
-  final PrintFunction _print;
+  final void Function(String) _print;
   bool _hadError = false;
 
   ErrorReporter(this._print);

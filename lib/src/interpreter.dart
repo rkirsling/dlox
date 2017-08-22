@@ -28,7 +28,7 @@ String _castStringOperand(Object value, Token token) {
 class Break implements Exception {}
 
 class Interpreter implements AstVisitor<Object> {
-  final PrintFunction _print;
+  final void Function(String) _print;
   final ErrorReporter _errorReporter;
   final Environment _environment = new Environment();
 
