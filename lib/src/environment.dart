@@ -2,47 +2,41 @@ import 'error_reporter.dart';
 import 'token.dart';
 
 class Environment {
-  final List<Map<String, Object>> _scopeStack = [{}];
+  final Environment _parent;
+  final Map<String, Object> _scope;
 
-  void push() {
-    _scopeStack.add({});
-  }
+  Environment.root(this._scope) : _parent = null;
 
-  void pop() {
-    if (_scopeStack.length <= 1) throw new RangeError('Cannot pop from global scope.');
-
-    _scopeStack.removeLast();
-  }
+  Environment.child(this._parent) : _scope = {};
 
   void define(Token identifier, Object value) {
     final name = identifier.lexeme;
 
-    if (_scopeStack.last.containsKey(name)) {
+    if (_scope.containsKey(name)) {
       throw new LoxError(identifier, 'Identifier \'$name\' is already defined.');
     }
 
-    _scopeStack.last[name] = value;
+    _scope[name] = value;
   }
 
   void operator []=(Token identifier, Object value) {
     final name = identifier.lexeme;
 
-    for (final scope in _scopeStack.reversed) {
-      if (scope.containsKey(name)) {
-        scope[name] = value;
-        return;
-      }
+    if (_scope.containsKey(name)) {
+      _scope[name] = value;
+    } else if (_parent != null) {
+      _parent[identifier] = value;
+    } else {
+      throw new LoxError(identifier, 'Identifier \'$name\' is undefined.');
     }
-
-    throw new LoxError(identifier, 'Identifier \'$name\' is undefined.');
   }
 
   Object operator [](Token identifier) {
     final name = identifier.lexeme;
 
-    for (final scope in _scopeStack.reversed) {
-      if (scope.containsKey(name)) return scope[name];
-    }
+    if (_scope.containsKey(name)) return _scope[name];
+
+    if (_parent != null) return _parent[identifier];
 
     throw new LoxError(identifier, 'Identifier \'$name\' is undefined.');
   }

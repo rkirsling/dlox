@@ -15,7 +15,7 @@ Statement:
     - Statement body
   BreakStatement:
     []
-  VarStatement:
+  VariableStatement:
     - Token identifier
     - Expression initializer
 

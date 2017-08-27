@@ -14,7 +14,7 @@ abstract class AstVisitor<R> {
   R visitExpressionStatement(ExpressionStatement node);
   R visitIfStatement(IfStatement node);
   R visitPrintStatement(PrintStatement node);
-  R visitVarStatement(VarStatement node);
+  R visitVariableStatement(VariableStatement node);
   R visitWhileStatement(WhileStatement node);
 }
 
@@ -150,15 +150,15 @@ class PrintStatement extends Statement {
     visitor.visitPrintStatement(this);
 }
 
-class VarStatement extends Statement {
+class VariableStatement extends Statement {
   final Token identifier;
   final Expression initializer;
 
-  VarStatement(this.identifier, this.initializer);
+  VariableStatement(this.identifier, this.initializer);
 
   @override
   R accept<R>(AstVisitor<R> visitor) =>
-    visitor.visitVarStatement(this);
+    visitor.visitVariableStatement(this);
 }
 
 class WhileStatement extends Statement {

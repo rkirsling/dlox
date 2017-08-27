@@ -19,7 +19,7 @@ class Parser {
 
   Statement _parseStatement() {
     try {
-      return _advanceIf(TokenType.$var) ? _parseVar() : _parseNonDeclaration();
+      return _advanceIf(TokenType.$var) ? _parseVariable() : _parseNonDeclaration();
     } on LoxError catch (error) {
       _errorReporter.report(error, isDynamic: false);
       _synchronize();
@@ -27,12 +27,11 @@ class Parser {
     }
   }
 
-  Statement _parseVar() {
-    final identifier = _peek();
-    _expect(TokenType.identifier, 'Expected identifier after \'var\'.');
+  VariableStatement _parseVariable() {
+    final identifier = _expect(TokenType.identifier, 'Expected variable name.');
     final initializer = _advanceIf(TokenType.equal) ? _parseExpression() : null;
-    _expect(TokenType.semicolon, 'Expected semicolon.');
-    return new VarStatement(identifier, initializer);
+    _expectSemicolon();
+    return new VariableStatement(identifier, initializer);
   }
 
   Statement _parseNonDeclaration() =>
@@ -43,26 +42,26 @@ class Parser {
     _advanceIf(TokenType.leftBrace) ? _parseBlock() :
     _advanceIf(TokenType.$print) ? _parsePrint() : _parseExpressionStatement();
 
-  Statement _parseBreak() {
+  BreakStatement _parseBreak() {
     final token = _advance();
     if (_loopDepth < 1) throw new LoxError(token, '\'break\' used outside of loop.');
 
-    _expect(TokenType.semicolon, 'Expected semicolon.');
+    _expectSemicolon();
     return new BreakStatement();
   }
 
   /// Desugars `for` into `while`.
   Statement _parseFor() {
-    _expect(TokenType.leftParen, 'Expected opening parenthesis.');
+    _expect(TokenType.leftParen, 'Expected \'(\' before \'for\' loop header.');
     final initializer =
       _advanceIf(TokenType.semicolon) ? null :
-      _advanceIf(TokenType.$var) ? _parseVar() : _parseExpressionStatement();
+      _advanceIf(TokenType.$var) ? _parseVariable() : _parseExpressionStatement();
 
     final condition = _peekIs(TokenType.semicolon) ? new LiteralExpression(true) : _parseExpression();
-    _expect(TokenType.semicolon, 'Expected semicolon.');
+    _expectSemicolon();
 
     final increment = _peekIs(TokenType.rightParen) ? null : new ExpressionStatement(_parseExpression());
-    _expect(TokenType.rightParen, 'Expected closing parenthesis.');
+    _expect(TokenType.rightParen, 'Expected \')\' after \'for\' loop header.');
 
     _loopDepth++;
     final rawBody = _parseNonDeclaration();
@@ -73,10 +72,10 @@ class Parser {
     return (initializer == null) ? rawWhile : new BlockStatement([initializer, rawWhile]);
   }
 
-  Statement _parseWhile() {
-    _expect(TokenType.leftParen, 'Expected opening parenthesis.');
+  WhileStatement _parseWhile() {
+    _expect(TokenType.leftParen, 'Expected \'(\' before \'while\' condition.');
     final condition = _parseExpression();
-    _expect(TokenType.rightParen, 'Expected closing parenthesis.');
+    _expect(TokenType.rightParen, 'Expected \')\' after \'while\' condition.');
 
     _loopDepth++;
     final body = _parseNonDeclaration();
@@ -84,33 +83,33 @@ class Parser {
     return new WhileStatement(condition, body);
   }
 
-  Statement _parseIf() {
-    _expect(TokenType.leftParen, 'Expected opening parenthesis.');
+  IfStatement _parseIf() {
+    _expect(TokenType.leftParen, 'Expected \'(\' before \'if\' condition.');
     final condition = _parseExpression();
-    _expect(TokenType.rightParen, 'Expected closing parenthesis.');
+    _expect(TokenType.rightParen, 'Expected \')\' after \'if\' condition.');
 
     final consequent = _parseNonDeclaration();
     final alternative = _advanceIf(TokenType.$else) ?  _parseNonDeclaration() : null;
     return new IfStatement(condition, consequent, alternative);
   }
 
-  Statement _parseBlock() {
+  BlockStatement _parseBlock() {
     final statements = <Statement>[];
     while (!_peekIs(TokenType.rightBrace) && !_isAtEnd()) statements.add(_parseStatement());
 
-    _expect(TokenType.rightBrace, 'Expected closing brace.');
+    _expect(TokenType.rightBrace, 'Expected \'}\'.');
     return new BlockStatement(statements);
   }
 
-  Statement _parsePrint() {
+  PrintStatement _parsePrint() {
     final expression = _parseExpression();
-    _expect(TokenType.semicolon, 'Expected semicolon.');
+    _expectSemicolon();
     return new PrintStatement(expression);
   }
 
-  Statement _parseExpressionStatement() {
+  ExpressionStatement _parseExpressionStatement() {
     final expression = _parseExpression();
-    _expect(TokenType.semicolon, 'Expected semicolon.');
+    _expectSemicolon();
     return new ExpressionStatement(expression);
   }
 
@@ -132,7 +131,7 @@ class Parser {
     if (!_advanceIf(TokenType.question)) return expression;
 
     final consequent = _parseAssignment();
-    _expect(TokenType.colon, 'Expected colon for ternary operator.');
+    _expect(TokenType.colon, 'Expected \':\' for ternary operator.');
     final alternative = _parseAssignment();
     return new TernaryExpression(expression, consequent, alternative);
   }
@@ -180,7 +179,7 @@ class Parser {
     switch (next.type) {
       case TokenType.leftParen:
         final expression = _parseExpression();
-        _expect(TokenType.rightParen, 'Expected closing parenthesis.');
+        _expect(TokenType.rightParen, 'Expected \')\'.');
         return new ParenthesizedExpression(expression);
       case TokenType.identifier:
         return new IdentifierExpression(next);
@@ -218,10 +217,14 @@ class Parser {
     return isMatch;
   }
 
-  void _expect(TokenType type, String errorMessage) {
+  Token _expect(TokenType type, String errorMessage) {
     final token = _advance();
     if (token.type != type) throw new LoxError(token, errorMessage);
+
+    return token;
   }
+
+  Token _expectSemicolon() => _expect(TokenType.semicolon, 'Expected \';\'.');
 
   void _synchronize() {
     while (!_isAtEnd()) {

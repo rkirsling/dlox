@@ -30,7 +30,7 @@ class Break implements Exception {}
 class Interpreter implements AstVisitor<Object> {
   final void Function(String) _print;
   final ErrorReporter _errorReporter;
-  final Environment _environment = new Environment();
+  final List<Environment> _environmentStack = [new Environment.root({})];
 
   Interpreter(this._print, this._errorReporter);
 
@@ -39,6 +39,15 @@ class Interpreter implements AstVisitor<Object> {
       statements.forEach(_evaluate);
     } on LoxError catch (error) {
       _errorReporter.report(error, isDynamic: true);
+    }
+  }
+
+  void interpretBlock(List<Statement> statements, Environment environment) {
+    _environmentStack.add(environment);
+    try {
+      statements.forEach(_evaluate);
+    } finally {
+      _environmentStack.removeLast();
     }
   }
 
@@ -54,12 +63,7 @@ class Interpreter implements AstVisitor<Object> {
 
   @override
   void visitBlockStatement(BlockStatement node) {
-    _environment.push();
-    try {
-      node.statements.forEach(_evaluate);
-    } finally {
-      _environment.pop();
-    }
+    interpretBlock(node.statements, new Environment.child(_environment));
   }
 
   @override
@@ -88,7 +92,7 @@ class Interpreter implements AstVisitor<Object> {
   }
 
   @override
-  void visitVarStatement(VarStatement node) {
+  void visitVariableStatement(VariableStatement node) {
     final value = (node.initializer == null) ? null : _evaluate(node.initializer);
     _environment.define(node.identifier, value);
   }
@@ -147,9 +151,9 @@ class Interpreter implements AstVisitor<Object> {
       case TokenType.minus:
         return asNumber(leftOperand) - asNumber(rightOperand);
       case TokenType.plus:
-        return (leftOperand is double)
-          ? leftOperand + asNumber(rightOperand)
-          : asString(leftOperand) + asString(rightOperand);
+        return (leftOperand is String || rightOperand is String)
+          ? _stringify(leftOperand) + _stringify(rightOperand)
+          : asNumber(leftOperand) + asNumber(rightOperand);
       case TokenType.greater:
         return (leftOperand is double)
           ? leftOperand > asNumber(rightOperand)
@@ -186,6 +190,8 @@ class Interpreter implements AstVisitor<Object> {
     _environment[node.identifier] = value;
     return value;
   }
+
+  Environment get _environment => _environmentStack.last;
 
   Object _evaluate(AstNode node) => node.accept(this);
 }
