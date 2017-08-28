@@ -8,6 +8,7 @@ class Parser {
   final List<Statement> _statements = [];
   int _index = 0;
   int _loopDepth = 0;
+  int _functionDepth = 0;
 
   Parser(this._tokens, this._errorReporter);
 
@@ -19,12 +20,28 @@ class Parser {
 
   Statement _parseStatement() {
     try {
-      return _advanceIf(TokenType.$var) ? _parseVariable() : _parseNonDeclaration();
+      return
+        _advanceIf(TokenType.$fun) ? _parseFunction() :
+        _advanceIf(TokenType.$var) ? _parseVariable() : _parseNonDeclaration();
     } on LoxError catch (error) {
       _errorReporter.report(error, isDynamic: false);
       _synchronize();
       return null;
     }
+  }
+
+  FunctionStatement _parseFunction({bool isMethod = false}) {
+    final identifier = _expect(TokenType.identifier, 'Expected ${isMethod ? 'method' : 'function'} name.');
+
+    _expect(TokenType.leftParen, 'Expected \'(\' before parameter list.');
+    final parameters = _parseParameterOrArgumentList(() => _expect(TokenType.identifier, 'Expected parameter name.'));
+    _expect(TokenType.rightParen, 'Expected \')\' after parameter list.');
+
+    _expect(TokenType.leftBrace, 'Expected \'{\'.');
+    _functionDepth++;
+    final statements = _parseBlock().statements;
+    _functionDepth--;
+    return new FunctionStatement(identifier, parameters, statements);
   }
 
   VariableStatement _parseVariable() {
@@ -35,12 +52,22 @@ class Parser {
   }
 
   Statement _parseNonDeclaration() =>
+    _peekIs(TokenType.$return) ? _parseReturn() :
     _peekIs(TokenType.$break) ? _parseBreak() :
     _advanceIf(TokenType.$for) ? _parseFor() :
     _advanceIf(TokenType.$while) ? _parseWhile() :
     _advanceIf(TokenType.$if) ? _parseIf() :
     _advanceIf(TokenType.leftBrace) ? _parseBlock() :
     _advanceIf(TokenType.$print) ? _parsePrint() : _parseExpressionStatement();
+
+  ReturnStatement _parseReturn() {
+    final token = _advance();
+    if (_functionDepth < 1) throw new LoxError(token, '\'return\' used outside of function.');
+
+    final expression = _peekIs(TokenType.semicolon) ? null : _parseExpression();
+    _expectSemicolon();
+    return new ReturnStatement(expression);
+  }
 
   BreakStatement _parseBreak() {
     final token = _advance();
@@ -167,11 +194,24 @@ class Parser {
   }
 
   Expression _parseUnary() {
-    if (!_peekIsIn([TokenType.bang, TokenType.minus])) return _parsePrimary();
+    if (!_peekIsIn([TokenType.bang, TokenType.minus])) return _parseCall();
 
     final operator = _advance();
     final operand = _parseUnary();
     return new UnaryExpression(operator, operand);
+  }
+
+  Expression _parseCall() {
+    var expression = _parsePrimary();
+
+    while (_peekIs(TokenType.leftParen)) {
+      final parenthesis = _advance();
+      final arguments = _parseParameterOrArgumentList(_parseExpression);
+      _expect(TokenType.rightParen, 'Expected \')\' after argument list.');
+      expression = new CallExpression(expression, parenthesis, arguments);
+    }
+
+    return expression;
   }
 
   Expression _parsePrimary() {
@@ -198,6 +238,18 @@ class Parser {
       default:
         throw new LoxError(next, 'Unexpected token \'${next.lexeme}\'.');
     }
+  }
+
+  List<T> _parseParameterOrArgumentList<T>(T Function() parseItem) {
+    final list = <T>[];
+
+    if (!_peekIs(TokenType.rightParen)) {
+      do {
+        list.add(parseItem());
+      } while (_advanceIf(TokenType.comma));
+    }
+
+    return list;
   }
 
   bool _isAtEnd() => _tokens[_index].type == TokenType.eof;

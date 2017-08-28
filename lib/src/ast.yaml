@@ -15,9 +15,15 @@ Statement:
     - Statement body
   BreakStatement:
     []
+  ReturnStatement:
+    - Expression expression
   VariableStatement:
     - Token identifier
     - Expression initializer
+  FunctionStatement:
+    - Token identifier
+    - List<Token> parameters
+    - List<Statement> statements
 
 Expression:
   LiteralExpression:
@@ -26,6 +32,10 @@ Expression:
     - Token identifier
   ParenthesizedExpression:
     - Expression expression
+  CallExpression:
+    - Expression callee
+    - Token parenthesis
+    - List<Expression> arguments
   UnaryExpression:
     - Token operator
     - Expression operand

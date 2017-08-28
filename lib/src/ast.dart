@@ -4,6 +4,7 @@ import 'token.dart';
 abstract class AstVisitor<R> {
   R visitAssignmentExpression(AssignmentExpression node);
   R visitBinaryExpression(BinaryExpression node);
+  R visitCallExpression(CallExpression node);
   R visitIdentifierExpression(IdentifierExpression node);
   R visitLiteralExpression(LiteralExpression node);
   R visitParenthesizedExpression(ParenthesizedExpression node);
@@ -12,8 +13,10 @@ abstract class AstVisitor<R> {
   R visitBlockStatement(BlockStatement node);
   R visitBreakStatement(BreakStatement node);
   R visitExpressionStatement(ExpressionStatement node);
+  R visitFunctionStatement(FunctionStatement node);
   R visitIfStatement(IfStatement node);
   R visitPrintStatement(PrintStatement node);
+  R visitReturnStatement(ReturnStatement node);
   R visitVariableStatement(VariableStatement node);
   R visitWhileStatement(WhileStatement node);
 }
@@ -45,6 +48,18 @@ class BinaryExpression extends Expression {
   @override
   R accept<R>(AstVisitor<R> visitor) =>
     visitor.visitBinaryExpression(this);
+}
+
+class CallExpression extends Expression {
+  final Expression callee;
+  final Token parenthesis;
+  final List<Expression> arguments;
+
+  CallExpression(this.callee, this.parenthesis, this.arguments);
+
+  @override
+  R accept<R>(AstVisitor<R> visitor) =>
+    visitor.visitCallExpression(this);
 }
 
 class IdentifierExpression extends Expression {
@@ -128,6 +143,18 @@ class ExpressionStatement extends Statement {
     visitor.visitExpressionStatement(this);
 }
 
+class FunctionStatement extends Statement {
+  final Token identifier;
+  final List<Token> parameters;
+  final List<Statement> statements;
+
+  FunctionStatement(this.identifier, this.parameters, this.statements);
+
+  @override
+  R accept<R>(AstVisitor<R> visitor) =>
+    visitor.visitFunctionStatement(this);
+}
+
 class IfStatement extends Statement {
   final Expression condition;
   final Statement consequent;
@@ -148,6 +175,16 @@ class PrintStatement extends Statement {
   @override
   R accept<R>(AstVisitor<R> visitor) =>
     visitor.visitPrintStatement(this);
+}
+
+class ReturnStatement extends Statement {
+  final Expression expression;
+
+  ReturnStatement(this.expression);
+
+  @override
+  R accept<R>(AstVisitor<R> visitor) =>
+    visitor.visitReturnStatement(this);
 }
 
 class VariableStatement extends Statement {

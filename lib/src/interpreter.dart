@@ -1,6 +1,8 @@
 import 'ast.dart';
+import 'callable.dart';
 import 'environment.dart';
 import 'error_reporter.dart';
+import 'prelude.dart';
 import 'token.dart';
 
 bool _isTruthy(Object value) => (value is bool) ? value : value != null;
@@ -12,6 +14,11 @@ bool _canShortCircuit(TokenType type, Object value) =>
 String _stringify(Object value) =>
   (value == null) ? 'nil' :
   (value is double && value.toInt() == value) ? '${value.toInt()}' : '$value';
+
+String _typeOf(Object value) =>
+  (value == null) ? 'nil' :
+  (value is bool) ? 'boolean' :
+  (value is double) ? 'number' : 'string';
 
 double _castNumberOperand(Object value, Token token) {
   if (value is double) return value;
@@ -30,7 +37,7 @@ class Break implements Exception {}
 class Interpreter implements AstVisitor<Object> {
   final void Function(String) _print;
   final ErrorReporter _errorReporter;
-  final List<Environment> _environmentStack = [new Environment.root({})];
+  final List<Environment> _environmentStack = [new Environment.root(prelude)];
 
   Interpreter(this._print, this._errorReporter);
 
@@ -92,9 +99,20 @@ class Interpreter implements AstVisitor<Object> {
   }
 
   @override
+  void visitReturnStatement(ReturnStatement node) {
+    throw new Return(node.expression == null ? null : _evaluate(node.expression));
+  }
+
+  @override
   void visitVariableStatement(VariableStatement node) {
     final value = (node.initializer == null) ? null : _evaluate(node.initializer);
     _environment.define(node.identifier, value);
+  }
+
+  @override
+  void visitFunctionStatement(FunctionStatement node) {
+    final function = new LoxFunction(node, _environment);
+    _environment.define(node.identifier, function);
   }
 
   @override
@@ -108,6 +126,22 @@ class Interpreter implements AstVisitor<Object> {
   @override
   Object visitParenthesizedExpression(ParenthesizedExpression node) =>
     _evaluate(node.expression);
+
+  @override
+  Object visitCallExpression(CallExpression node) {
+    final callee = _evaluate(node.callee);
+
+    if (callee is Callable) {
+      if (node.arguments.length != callee.arity) {
+        throw new LoxError(node.parenthesis, 'Expected ${callee.arity} arguments but found ${node.arguments.length}.');
+      }
+
+      final arguments = node.arguments.map(_evaluate).toList();
+      return callee(interpretBlock, arguments);
+    }
+
+    throw new LoxError(node.parenthesis, 'Cannot call ${_typeOf(callee)} object.');
+  }
 
   @override
   Object visitUnaryExpression(UnaryExpression node) {
