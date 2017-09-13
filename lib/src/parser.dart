@@ -2,6 +2,21 @@ import 'ast.dart';
 import 'error_reporter.dart';
 import 'token.dart';
 
+String _stringParse(String literal) => literal.substring(1, literal.length - 1);
+
+const List<TokenType> _statementOpeners = const [
+  TokenType.leftBrace,
+  TokenType.$break,
+  TokenType.$class,
+  TokenType.$fun,
+  TokenType.$for,
+  TokenType.$if,
+  TokenType.$print,
+  TokenType.$return,
+  TokenType.$var,
+  TokenType.$while
+];
+
 class Parser {
   final List<Token> _tokens;
   final ErrorReporter _errorReporter;
@@ -18,14 +33,14 @@ class Parser {
     return _statements;
   }
 
-  Statement _parseStatement() {
+  Statement _parseStatement({bool inBlock = false}) {
     try {
       return
         _advanceIf(TokenType.$fun) ? _parseFunction() :
         _advanceIf(TokenType.$var) ? _parseVariable() : _parseNonDeclaration();
     } on LoxError catch (error) {
       _errorReporter.report(error, isDynamic: false);
-      _synchronize();
+      _synchronize(inBlock);
       return null;
     }
   }
@@ -122,7 +137,7 @@ class Parser {
 
   BlockStatement _parseBlock() {
     final statements = <Statement>[];
-    while (!_peekIs(TokenType.rightBrace) && !_isAtEnd()) statements.add(_parseStatement());
+    while (!_peekIs(TokenType.rightBrace) && !_isAtEnd()) statements.add(_parseStatement(inBlock: true));
 
     _expect(TokenType.rightBrace, 'Expected \'}\'.');
     return new BlockStatement(statements);
@@ -147,8 +162,10 @@ class Parser {
     if (!_peekIs(TokenType.equal)) return expression;
 
     final operator = _advance();
-    final rhs = _parseAssignment();
-    if (expression is IdentifierExpression) return new AssignmentExpression(expression.identifier, rhs);
+    if (expression is IdentifierExpression) {
+      final rhs = _parseAssignment();
+      return new AssignmentExpression(expression.identifier, rhs);
+    }
 
     throw new LoxError(operator, 'Invalid left-hand side of assignment.');
   }
@@ -215,29 +232,23 @@ class Parser {
   }
 
   Expression _parsePrimary() {
-    final next = _advance();
-    switch (next.type) {
-      case TokenType.leftParen:
-        final expression = _parseExpression();
-        _expect(TokenType.rightParen, 'Expected \')\'.');
-        return new ParenthesizedExpression(expression);
-      case TokenType.identifier:
-        return new IdentifierExpression(next);
-      case TokenType.$nil:
-        return new LiteralExpression(null);
-      case TokenType.$true:
-        return new LiteralExpression(true);
-      case TokenType.$false:
-        return new LiteralExpression(false);
-      case TokenType.string:
-        return new LiteralExpression(next.lexeme.substring(1, next.lexeme.length - 1));
-      case TokenType.number:
-        return new LiteralExpression(double.parse(next.lexeme));
-      case TokenType.eof:
-        throw new LoxError(next, 'Unexpected end of input.');
-      default:
-        throw new LoxError(next, 'Unexpected token \'${next.lexeme}\'.');
-    }
+    final token = _peek();
+
+    return
+      _advanceIf(TokenType.leftParen) ? _parseParenthesized() :
+      _advanceIf(TokenType.identifier) ? new IdentifierExpression(token) :
+      _advanceIf(TokenType.$nil) ? new LiteralExpression(null) :
+      _advanceIf(TokenType.$true) ? new LiteralExpression(true) :
+      _advanceIf(TokenType.$false) ? new LiteralExpression(false) :
+      _advanceIf(TokenType.string) ? new LiteralExpression(_stringParse(token.lexeme)) :
+      _advanceIf(TokenType.number) ? new LiteralExpression(double.parse(token.lexeme)) :
+        throw new LoxError(token, _isAtEnd() ? 'Unexpected end of input.' : 'Unexpected token \'${token.lexeme}\'.');
+  }
+
+  ParenthesizedExpression _parseParenthesized() {
+    final expression = _parseExpression();
+    _expect(TokenType.rightParen, 'Expected \')\'.');
+    return new ParenthesizedExpression(expression);
   }
 
   List<T> _parseParameterOrArgumentList<T>(T Function() parseItem) {
@@ -252,7 +263,7 @@ class Parser {
     return list;
   }
 
-  bool _isAtEnd() => _tokens[_index].type == TokenType.eof;
+  bool _isAtEnd() => _peekIs(TokenType.eof);
 
   Token _peek() => _tokens[_index];
 
@@ -263,41 +274,41 @@ class Parser {
   Token _advance() => _isAtEnd() ? _tokens[_index] : _tokens[_index++];
 
   bool _advanceIf(TokenType type) {
-    final isMatch = _peek().type == type;
+    final isMatch = _peekIs(type);
     if (isMatch) _advance();
 
     return isMatch;
   }
 
   Token _expect(TokenType type, String errorMessage) {
-    final token = _advance();
-    if (token.type != type) throw new LoxError(token, errorMessage);
+    if (!_peekIs(type)) throw new LoxError(_peek(), errorMessage);
 
-    return token;
+    return _advance();
   }
 
-  Token _expectSemicolon() => _expect(TokenType.semicolon, 'Expected \';\'.');
-
-  void _synchronize() {
-    while (!_isAtEnd()) {
-      switch (_peek().type) {
-        case TokenType.semicolon:
-          _advance();
-          return;
-        case TokenType.$break:
-        case TokenType.$class:
-        case TokenType.$fun:
-        case TokenType.$for:
-        case TokenType.$if:
-        case TokenType.$print:
-        case TokenType.$return:
-        case TokenType.$var:
-        case TokenType.$while:
-          return;
-        default:
-          _advance();
-          break;
-      }
+  void _expectSemicolon() {
+    if (!_peekIs(TokenType.semicolon)) {
+      _error('Expected \';\'.');
+      return;
     }
+
+    _advance();
+  }
+
+  void _synchronize(bool inBlock) {
+    while (!_isAtEnd()) {
+      if (_advanceIf(TokenType.semicolon)) return;
+
+      if (_peekIs(TokenType.rightBrace) && inBlock) return;
+
+      if (_peekIsIn(_statementOpeners)) return;
+
+      _advance();
+    }
+  }
+
+  void _error(String message) {
+    final token = _peek();
+    _errorReporter.reportAtPosition(token.line, token.column, message);
   }
 }

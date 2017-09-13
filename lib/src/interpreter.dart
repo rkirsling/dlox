@@ -137,7 +137,7 @@ class Interpreter implements AstVisitor<Object> {
       }
 
       final arguments = node.arguments.map(_evaluate).toList();
-      return callee(interpretBlock, arguments);
+      return callee.call(interpretBlock, arguments);
     }
 
     throw new LoxError(node.parenthesis, 'Cannot call ${_typeOf(callee)} object.');

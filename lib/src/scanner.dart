@@ -42,7 +42,7 @@ class Scanner {
   int _tokenLine;
   int _tokenColumn;
 
-  Scanner(this._source, this._errorReporter);
+  Scanner(this._source, this._errorReporter, [this._line]);
 
   List<Token> scanTokens() {
     while (!_isAtEnd()) _scanToken();
@@ -150,8 +150,7 @@ class Scanner {
 
   void _scanString() {
     // Note: Lox only has multiline strings.
-    final foundMatchingQuote = _advanceTo($quote);
-    if (!foundMatchingQuote) {
+    if (!_advanceTo($quote)) {
       _error('Unterminated string.');
       return;
     }

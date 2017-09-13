@@ -27,15 +27,21 @@ void _runFile(String path) {
 }
 
 void _runPrompt() {
-  for (;;) {
-    stdout.write('dlox> ');
-    _run(stdin.readLineSync());
+  stdout
+    ..writeln('This is a minimal Lox REPL for debug use.')
+    ..writeln('* Statements may not include line breaks.')
+    ..writeln('* Standalone expressions are not allowed.')
+    ..writeln();
+
+  for (var line = 1; ; line++) {
+    stdout.write('dlox:$line> ');
+    _run(stdin.readLineSync(), line);
     _errorReporter.reset();
   }
 }
 
-int _run(String source) {
-  final tokens = new Scanner(source, _errorReporter).scanTokens();
+int _run(String source, [int line = 1]) {
+  final tokens = new Scanner(source, _errorReporter, line).scanTokens();
   final statements = new Parser(tokens, _errorReporter).parse();
   if (_errorReporter.hadError) return 65;
 
