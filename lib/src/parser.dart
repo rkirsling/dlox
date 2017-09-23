@@ -131,7 +131,7 @@ class Parser {
     _expect(TokenType.rightParen, 'Expected \')\' after \'if\' condition.');
 
     final consequent = _parseNonDeclaration();
-    final alternative = _advanceIf(TokenType.$else) ?  _parseNonDeclaration() : null;
+    final alternative = _advanceIf(TokenType.$else) ? _parseNonDeclaration() : null;
     return new IfStatement(condition, consequent, alternative);
   }
 

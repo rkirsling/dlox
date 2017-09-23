@@ -37,7 +37,7 @@ class Break implements Exception {}
 class Interpreter implements AstVisitor<Object> {
   final void Function(String) _print;
   final ErrorReporter _errorReporter;
-  final List<Environment> _environmentStack = [new Environment.root(prelude)];
+  Environment _environment = new Environment.root(prelude);
 
   Interpreter(this._print, this._errorReporter);
 
@@ -50,11 +50,12 @@ class Interpreter implements AstVisitor<Object> {
   }
 
   void interpretBlock(List<Statement> statements, Environment environment) {
-    _environmentStack.add(environment);
+    final previous = _environment;
+    _environment = environment;
     try {
       statements.forEach(_evaluate);
     } finally {
-      _environmentStack.removeLast();
+      _environment = previous;
     }
   }
 
@@ -224,8 +225,6 @@ class Interpreter implements AstVisitor<Object> {
     _environment[node.identifier] = value;
     return value;
   }
-
-  Environment get _environment => _environmentStack.last;
 
   Object _evaluate(AstNode node) => node.accept(this);
 }

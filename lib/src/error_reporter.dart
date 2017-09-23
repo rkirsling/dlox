@@ -24,8 +24,8 @@ class ErrorReporter {
   }
 
   void reportAtPosition(int line, int column, String message, {bool isDynamic = false}) {
-    final stage = isDynamic ? 'runtime' : ' syntax';
-    _print('$_redText $stage error $_resetText $message $_greyText($line:$column)$_resetText');
+    final stage = (isDynamic ? 'runtime' : 'syntax').padLeft(8);
+    _print('$_redText$stage error $_resetText $message $_greyText($line:$column)$_resetText');
     _hadError = true;
   }
 

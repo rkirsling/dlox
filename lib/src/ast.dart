@@ -34,8 +34,7 @@ class AssignmentExpression extends Expression {
   AssignmentExpression(this.identifier, this.rhs);
 
   @override
-  R accept<R>(AstVisitor<R> visitor) =>
-    visitor.visitAssignmentExpression(this);
+  R accept<R>(AstVisitor<R> visitor) => visitor.visitAssignmentExpression(this);
 }
 
 class BinaryExpression extends Expression {
@@ -46,8 +45,7 @@ class BinaryExpression extends Expression {
   BinaryExpression(this.leftOperand, this.operator, this.rightOperand);
 
   @override
-  R accept<R>(AstVisitor<R> visitor) =>
-    visitor.visitBinaryExpression(this);
+  R accept<R>(AstVisitor<R> visitor) => visitor.visitBinaryExpression(this);
 }
 
 class CallExpression extends Expression {
@@ -58,8 +56,7 @@ class CallExpression extends Expression {
   CallExpression(this.callee, this.parenthesis, this.arguments);
 
   @override
-  R accept<R>(AstVisitor<R> visitor) =>
-    visitor.visitCallExpression(this);
+  R accept<R>(AstVisitor<R> visitor) => visitor.visitCallExpression(this);
 }
 
 class IdentifierExpression extends Expression {
@@ -68,8 +65,7 @@ class IdentifierExpression extends Expression {
   IdentifierExpression(this.identifier);
 
   @override
-  R accept<R>(AstVisitor<R> visitor) =>
-    visitor.visitIdentifierExpression(this);
+  R accept<R>(AstVisitor<R> visitor) => visitor.visitIdentifierExpression(this);
 }
 
 class LiteralExpression extends Expression {
@@ -78,8 +74,7 @@ class LiteralExpression extends Expression {
   LiteralExpression(this.value);
 
   @override
-  R accept<R>(AstVisitor<R> visitor) =>
-    visitor.visitLiteralExpression(this);
+  R accept<R>(AstVisitor<R> visitor) => visitor.visitLiteralExpression(this);
 }
 
 class ParenthesizedExpression extends Expression {
@@ -88,8 +83,7 @@ class ParenthesizedExpression extends Expression {
   ParenthesizedExpression(this.expression);
 
   @override
-  R accept<R>(AstVisitor<R> visitor) =>
-    visitor.visitParenthesizedExpression(this);
+  R accept<R>(AstVisitor<R> visitor) => visitor.visitParenthesizedExpression(this);
 }
 
 class TernaryExpression extends Expression {
@@ -100,8 +94,7 @@ class TernaryExpression extends Expression {
   TernaryExpression(this.condition, this.consequent, this.alternative);
 
   @override
-  R accept<R>(AstVisitor<R> visitor) =>
-    visitor.visitTernaryExpression(this);
+  R accept<R>(AstVisitor<R> visitor) => visitor.visitTernaryExpression(this);
 }
 
 class UnaryExpression extends Expression {
@@ -111,8 +104,7 @@ class UnaryExpression extends Expression {
   UnaryExpression(this.operator, this.operand);
 
   @override
-  R accept<R>(AstVisitor<R> visitor) =>
-    visitor.visitUnaryExpression(this);
+  R accept<R>(AstVisitor<R> visitor) => visitor.visitUnaryExpression(this);
 }
 
 abstract class Statement extends AstNode {}
@@ -123,14 +115,12 @@ class BlockStatement extends Statement {
   BlockStatement(this.statements);
 
   @override
-  R accept<R>(AstVisitor<R> visitor) =>
-    visitor.visitBlockStatement(this);
+  R accept<R>(AstVisitor<R> visitor) => visitor.visitBlockStatement(this);
 }
 
 class BreakStatement extends Statement {
   @override
-  R accept<R>(AstVisitor<R> visitor) =>
-    visitor.visitBreakStatement(this);
+  R accept<R>(AstVisitor<R> visitor) => visitor.visitBreakStatement(this);
 }
 
 class ExpressionStatement extends Statement {
@@ -139,8 +129,7 @@ class ExpressionStatement extends Statement {
   ExpressionStatement(this.expression);
 
   @override
-  R accept<R>(AstVisitor<R> visitor) =>
-    visitor.visitExpressionStatement(this);
+  R accept<R>(AstVisitor<R> visitor) => visitor.visitExpressionStatement(this);
 }
 
 class FunctionStatement extends Statement {
@@ -151,8 +140,7 @@ class FunctionStatement extends Statement {
   FunctionStatement(this.identifier, this.parameters, this.statements);
 
   @override
-  R accept<R>(AstVisitor<R> visitor) =>
-    visitor.visitFunctionStatement(this);
+  R accept<R>(AstVisitor<R> visitor) => visitor.visitFunctionStatement(this);
 }
 
 class IfStatement extends Statement {
@@ -163,8 +151,7 @@ class IfStatement extends Statement {
   IfStatement(this.condition, this.consequent, this.alternative);
 
   @override
-  R accept<R>(AstVisitor<R> visitor) =>
-    visitor.visitIfStatement(this);
+  R accept<R>(AstVisitor<R> visitor) => visitor.visitIfStatement(this);
 }
 
 class PrintStatement extends Statement {
@@ -173,8 +160,7 @@ class PrintStatement extends Statement {
   PrintStatement(this.expression);
 
   @override
-  R accept<R>(AstVisitor<R> visitor) =>
-    visitor.visitPrintStatement(this);
+  R accept<R>(AstVisitor<R> visitor) => visitor.visitPrintStatement(this);
 }
 
 class ReturnStatement extends Statement {
@@ -183,8 +169,7 @@ class ReturnStatement extends Statement {
   ReturnStatement(this.expression);
 
   @override
-  R accept<R>(AstVisitor<R> visitor) =>
-    visitor.visitReturnStatement(this);
+  R accept<R>(AstVisitor<R> visitor) => visitor.visitReturnStatement(this);
 }
 
 class VariableStatement extends Statement {
@@ -194,8 +179,7 @@ class VariableStatement extends Statement {
   VariableStatement(this.identifier, this.initializer);
 
   @override
-  R accept<R>(AstVisitor<R> visitor) =>
-    visitor.visitVariableStatement(this);
+  R accept<R>(AstVisitor<R> visitor) => visitor.visitVariableStatement(this);
 }
 
 class WhileStatement extends Statement {
@@ -205,6 +189,5 @@ class WhileStatement extends Statement {
   WhileStatement(this.condition, this.body);
 
   @override
-  R accept<R>(AstVisitor<R> visitor) =>
-    visitor.visitWhileStatement(this);
+  R accept<R>(AstVisitor<R> visitor) => visitor.visitWhileStatement(this);
 }

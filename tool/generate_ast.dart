@@ -51,8 +51,7 @@ String _generateAstModel(Map<String, Map> inputMap) {
 
       nodes
         ..writeln('  @override')
-        ..writeln('  R accept<R>(AstVisitor<R> visitor) =>')
-        ..writeln('    visitor.visit$className(this);')
+        ..writeln('  R accept<R>(AstVisitor<R> visitor) => visitor.visit$className(this);')
         ..writeln('}');
     });
   });

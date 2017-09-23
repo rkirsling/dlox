@@ -137,6 +137,8 @@ class Scanner {
   }
 
   void _addEofToken() {
+    if (_tokens.isNotEmpty && _tokens.last.type == TokenType.eof) return;
+
     _tokens.add(new Token(TokenType.eof, '', _line, _offset - _lineStart));
   }
 
