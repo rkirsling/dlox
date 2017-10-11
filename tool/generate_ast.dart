@@ -14,7 +14,9 @@ File _getFile(String path) => new File.fromUri(Platform.script.resolve(path));
 String _generateAstModel(Map<String, Map> inputMap) {
   final preamble = new StringBuffer()
     ..writeln('// DO NOT EDIT -- This file is generated from ast.yaml.')
-    ..writeln('import \'token.dart\';');
+    ..writeln('import \'token.dart\';')
+    ..writeln()
+    ..writeln('abstract class Resolvable { int depth; }');
 
   final visitor = new StringBuffer()
     ..writeln()
@@ -32,12 +34,16 @@ String _generateAstModel(Map<String, Map> inputMap) {
       ..writeln('abstract class $baseName extends AstNode {}');
 
     // Sort class names.
-    new SplayTreeMap<String, List<String>>.from(classes).forEach((className, fields) {
+    new SplayTreeMap<String, List<String>>.from(classes).forEach((signature, fields) {
+      final endOfClassName = signature.indexOf(' ');
+      final className = endOfClassName == -1 ? signature : signature.substring(0, endOfClassName);
+      final interfacesAndMixins = endOfClassName == -1 ? '' : signature.substring(endOfClassName);
+
       visitor.writeln('  R visit$className($className node);');
 
       nodes
         ..writeln()
-        ..writeln('class $className extends $baseName {');
+        ..writeln('class $className extends $baseName$interfacesAndMixins {');
 
       if (fields.isNotEmpty) {
         for (final field in fields) nodes.writeln('  final $field;');

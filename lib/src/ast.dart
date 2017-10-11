@@ -1,6 +1,8 @@
 // DO NOT EDIT -- This file is generated from ast.yaml.
 import 'token.dart';
 
+abstract class Resolvable { int depth; }
+
 abstract class AstVisitor<R> {
   R visitAssignmentExpression(AssignmentExpression node);
   R visitBinaryExpression(BinaryExpression node);
@@ -27,7 +29,7 @@ abstract class AstNode {
 
 abstract class Expression extends AstNode {}
 
-class AssignmentExpression extends Expression {
+class AssignmentExpression extends Expression with Resolvable {
   final Token identifier;
   final Expression rhs;
 
@@ -59,7 +61,7 @@ class CallExpression extends Expression {
   R accept<R>(AstVisitor<R> visitor) => visitor.visitCallExpression(this);
 }
 
-class IdentifierExpression extends Expression {
+class IdentifierExpression extends Expression with Resolvable {
   final Token identifier;
 
   IdentifierExpression(this.identifier);

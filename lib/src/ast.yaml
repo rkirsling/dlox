@@ -28,7 +28,7 @@ Statement:
 Expression:
   LiteralExpression:
     - Object value
-  IdentifierExpression:
+  IdentifierExpression with Resolvable:
     - Token identifier
   ParenthesizedExpression:
     - Expression expression
@@ -47,6 +47,6 @@ Expression:
     - Expression condition
     - Expression consequent
     - Expression alternative
-  AssignmentExpression:
+  AssignmentExpression with Resolvable:
     - Token identifier
     - Expression rhs

@@ -3,9 +3,11 @@ import 'dart:io';
 import 'package:dlox/src/error_reporter.dart';
 import 'package:dlox/src/interpreter.dart';
 import 'package:dlox/src/parser.dart';
+import 'package:dlox/src/resolver.dart';
 import 'package:dlox/src/scanner.dart';
 
 final _errorReporter = new ErrorReporter(stderr.writeln);
+final _resolver = new Resolver(_errorReporter);
 final _interpreter = new Interpreter(stdout.writeln, _errorReporter);
 
 void main(List<String> args) {
@@ -43,6 +45,9 @@ void _runPrompt() {
 int _run(String source, [int line = 1]) {
   final tokens = new Scanner(source, _errorReporter, line).scanTokens();
   final statements = new Parser(tokens, _errorReporter).parse();
+  if (_errorReporter.hadError) return 65;
+
+  _resolver.resolve(statements);
   if (_errorReporter.hadError) return 65;
 
   _interpreter.interpret(statements);

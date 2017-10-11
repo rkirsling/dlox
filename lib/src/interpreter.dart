@@ -122,7 +122,7 @@ class Interpreter implements AstVisitor<Object> {
 
   @override
   Object visitIdentifierExpression(IdentifierExpression node) =>
-    _environment[node.identifier];
+    _environment.ancestor(node.depth)[node.identifier];
 
   @override
   Object visitParenthesizedExpression(ParenthesizedExpression node) =>
@@ -222,7 +222,7 @@ class Interpreter implements AstVisitor<Object> {
   @override
   Object visitAssignmentExpression(AssignmentExpression node) {
     final value = _evaluate(node.rhs);
-    _environment[node.identifier] = value;
+    _environment.ancestor(node.depth)[node.identifier] = value;
     return value;
   }
 
