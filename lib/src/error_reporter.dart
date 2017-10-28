@@ -13,11 +13,11 @@ class LoxError implements Exception {
 
 class ErrorReporter {
   final void Function(String) _print;
-  bool _hadError = false;
+  int _errorCount = 0;
 
   ErrorReporter(this._print);
 
-  bool get hadError => _hadError;
+  int get errorCount => _errorCount;
 
   void report(LoxError error, {bool isDynamic = false}) {
     reportAtPosition(error.token.line, error.token.column, error.message, isDynamic: isDynamic);
@@ -26,10 +26,15 @@ class ErrorReporter {
   void reportAtPosition(int line, int column, String message, {bool isDynamic = false}) {
     final stage = (isDynamic ? 'runtime' : 'syntax').padLeft(8);
     _print('$_redText$stage error $_resetText $message $_greyText($line:$column)$_resetText');
-    _hadError = true;
+    _errorCount++;
+  }
+
+  void displayErrorCount() {
+    final suffix = _errorCount == 1 ? '' : 's';
+    _print('$_errorCount error$suffix identified.');
   }
 
   void reset() {
-    _hadError = false;
+    _errorCount = 0;
   }
 }

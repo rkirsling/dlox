@@ -9,7 +9,7 @@ bool _isDigit(int char) => char >= $0 && char <= $9;
 
 bool _isAlpha(int char) => (char >= $a && char <= $z) || (char >= $A && char <= $Z) || char == $_;
 
-bool _isAlphaNumeric(int char) => _isAlpha(char) || _isDigit(char);
+bool _isAlphanumeric(int char) => _isAlpha(char) || _isDigit(char);
 
 const Map<String, TokenType> _keywordTypes = const {
   'and': TokenType.$and,
@@ -173,7 +173,7 @@ class Scanner {
   }
 
   void _scanIdentifierOrKeyword() {
-    _advanceWhile(_isAlphaNumeric);
+    _advanceWhile(_isAlphanumeric);
     _addToken(_keywordTypes[_lexeme] ?? TokenType.identifier);
   }
 

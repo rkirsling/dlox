@@ -13,7 +13,7 @@ class Resolver implements AstVisitor<void> {
     final previousGlobals = new Set<String>.from(_scopeStack.first);
 
     statements.forEach(_resolve);
-    if (_errorReporter.hadError) _scopeStack.first.retainAll(previousGlobals);
+    if (_errorReporter.errorCount > 0) _scopeStack.first.retainAll(previousGlobals);
   }
 
   @override

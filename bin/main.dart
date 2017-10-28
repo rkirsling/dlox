@@ -6,6 +6,10 @@ import 'package:dlox/src/parser.dart';
 import 'package:dlox/src/resolver.dart';
 import 'package:dlox/src/scanner.dart';
 
+const _successCode = 0;
+const _staticErrorCode = 65;
+const _dynamicErrorCode = 70;
+
 final _errorReporter = new ErrorReporter(stderr.writeln);
 final _resolver = new Resolver(_errorReporter);
 final _interpreter = new Interpreter(stdout.writeln, _errorReporter);
@@ -23,6 +27,7 @@ void main(List<String> args) {
 void _runFile(String path) {
   try {
     exitCode = _run(new File(path).readAsStringSync());
+    if (exitCode == _staticErrorCode) _errorReporter.displayErrorCount();
   } on FileSystemException {
     stderr.writeln('Could not open file: $path');
   }
@@ -45,11 +50,11 @@ void _runPrompt() {
 int _run(String source, [int line = 1]) {
   final tokens = new Scanner(source, _errorReporter, line).scanTokens();
   final statements = new Parser(tokens, _errorReporter).parse();
-  if (_errorReporter.hadError) return 65;
+  if (_errorReporter.errorCount > 0) return _staticErrorCode;
 
   _resolver.resolve(statements);
-  if (_errorReporter.hadError) return 65;
+  if (_errorReporter.errorCount > 0) return _staticErrorCode;
 
   _interpreter.interpret(statements);
-  return _errorReporter.hadError ? 70 : 0;
+  return _errorReporter.errorCount > 0 ? _dynamicErrorCode : _successCode;
 }
