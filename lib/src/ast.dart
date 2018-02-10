@@ -121,6 +121,10 @@ class BlockStatement extends Statement {
 }
 
 class BreakStatement extends Statement {
+  final Token keyword;
+
+  BreakStatement(this.keyword);
+
   @override
   R accept<R>(AstVisitor<R> visitor) => visitor.visitBreakStatement(this);
 }
@@ -166,9 +170,10 @@ class PrintStatement extends Statement {
 }
 
 class ReturnStatement extends Statement {
+  final Token keyword;
   final Expression expression;
 
-  ReturnStatement(this.expression);
+  ReturnStatement(this.keyword, this.expression);
 
   @override
   R accept<R>(AstVisitor<R> visitor) => visitor.visitReturnStatement(this);

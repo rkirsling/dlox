@@ -5,6 +5,8 @@ import 'token.dart';
 class Resolver implements AstVisitor<void> {
   final ErrorReporter _errorReporter;
   final List<Set<String>> _scopeStack = [new Set()];
+  int _loopDepth = 0;
+  int _functionDepth = 0;
   String _toBeDefined;
 
   Resolver(this._errorReporter);
@@ -45,14 +47,20 @@ class Resolver implements AstVisitor<void> {
   @override
   void visitWhileStatement(WhileStatement node) {
     _resolve(node.condition);
+    _loopDepth++;
     _resolve(node.body);
+    _loopDepth--;
   }
 
   @override
-  void visitBreakStatement(BreakStatement node) {}
+  void visitBreakStatement(BreakStatement node) {
+    if (_loopDepth < 1) _error(node.keyword, '\'break\' used outside of loop.');
+  }
 
   @override
   void visitReturnStatement(ReturnStatement node) {
+    if (_functionDepth < 1) _error(node.keyword, '\'return\' used outside of function.');
+
     if (node.expression == null) return;
 
     _resolve(node.expression);
@@ -74,7 +82,9 @@ class Resolver implements AstVisitor<void> {
 
     _scopeStack.add(new Set());
     node.parameters.forEach(_declare);
+    _functionDepth++;
     node.statements.forEach(_resolve);
+    _functionDepth--;
     _scopeStack.removeLast();
   }
 

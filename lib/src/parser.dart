@@ -22,8 +22,6 @@ class Parser {
   final ErrorReporter _errorReporter;
   final List<Statement> _statements = [];
   int _index = 0;
-  int _loopDepth = 0;
-  int _functionDepth = 0;
 
   Parser(this._tokens, this._errorReporter);
 
@@ -53,9 +51,7 @@ class Parser {
     _expect(TokenType.rightParen, 'Expected \')\' after parameter list.');
 
     _expect(TokenType.leftBrace, 'Expected \'{\'.');
-    _functionDepth++;
     final statements = _parseBlock().statements;
-    _functionDepth--;
     return new FunctionStatement(identifier, parameters, statements);
   }
 
@@ -76,20 +72,16 @@ class Parser {
     _advanceIf(TokenType.$print) ? _parsePrint() : _parseExpressionStatement();
 
   ReturnStatement _parseReturn() {
-    final token = _advance();
-    if (_functionDepth < 1) throw new LoxError(token, '\'return\' used outside of function.');
-
+    final keyword = _advance();
     final expression = _peekIs(TokenType.semicolon) ? null : _parseExpression();
     _expectSemicolon();
-    return new ReturnStatement(expression);
+    return new ReturnStatement(keyword, expression);
   }
 
   BreakStatement _parseBreak() {
-    final token = _advance();
-    if (_loopDepth < 1) throw new LoxError(token, '\'break\' used outside of loop.');
-
+    final keyword = _advance();
     _expectSemicolon();
-    return new BreakStatement();
+    return new BreakStatement(keyword);
   }
 
   /// Desugars `for` into `while`.
@@ -105,9 +97,7 @@ class Parser {
     final increment = _peekIs(TokenType.rightParen) ? null : new ExpressionStatement(_parseExpression());
     _expect(TokenType.rightParen, 'Expected \')\' after \'for\' loop header.');
 
-    _loopDepth++;
     final rawBody = _parseNonDeclaration();
-    _loopDepth--;
     final body = (increment == null) ? rawBody : new BlockStatement([rawBody, increment]);
 
     final rawWhile = new WhileStatement(condition, body);
@@ -119,9 +109,7 @@ class Parser {
     final condition = _parseExpression();
     _expect(TokenType.rightParen, 'Expected \')\' after \'while\' condition.');
 
-    _loopDepth++;
     final body = _parseNonDeclaration();
-    _loopDepth--;
     return new WhileStatement(condition, body);
   }
 
