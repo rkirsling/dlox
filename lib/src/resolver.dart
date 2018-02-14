@@ -131,7 +131,7 @@ class Resolver implements AstVisitor<void> {
   @override
   void visitAssignmentExpression(AssignmentExpression node) {
     _resolve(node.rhs);
-    _resolveReference(node, node.identifier.lexeme);
+    _resolve(node.lhs);
   }
 
   void _resolve(AstNode node) {

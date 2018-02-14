@@ -222,8 +222,15 @@ class Interpreter implements AstVisitor<Object> {
   @override
   Object visitAssignmentExpression(AssignmentExpression node) {
     final value = _evaluate(node.rhs);
-    _environment.ancestor(node.depth)[node.identifier] = value;
-    return value;
+    final lhs = node.lhs;
+
+    if (lhs is IdentifierExpression) {
+      _environment.ancestor(lhs.depth)[lhs.identifier] = value;
+      return value;
+    }
+
+    assert(false);
+    return null;
   }
 
   Object _evaluate(AstNode node) => node.accept(this);

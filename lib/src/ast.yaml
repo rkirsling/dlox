@@ -48,6 +48,6 @@ Expression:
     - Expression condition
     - Expression consequent
     - Expression alternative
-  AssignmentExpression with Resolvable:
-    - Token identifier
+  AssignmentExpression:
+    - Expression lhs
     - Expression rhs

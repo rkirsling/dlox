@@ -152,7 +152,7 @@ class Parser {
     final operator = _advance();
     if (expression is IdentifierExpression) {
       final rhs = _parseAssignment();
-      return new AssignmentExpression(expression.identifier, rhs);
+      return new AssignmentExpression(expression, rhs);
     }
 
     throw new LoxError(operator, 'Invalid left-hand side of assignment.');

@@ -29,11 +29,11 @@ abstract class AstNode {
 
 abstract class Expression extends AstNode {}
 
-class AssignmentExpression extends Expression with Resolvable {
-  final Token identifier;
+class AssignmentExpression extends Expression {
+  final Expression lhs;
   final Expression rhs;
 
-  AssignmentExpression(this.identifier, this.rhs);
+  AssignmentExpression(this.lhs, this.rhs);
 
   @override
   R accept<R>(AstVisitor<R> visitor) => visitor.visitAssignmentExpression(this);
