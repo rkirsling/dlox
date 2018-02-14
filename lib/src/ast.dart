@@ -10,10 +10,13 @@ abstract class AstVisitor<R> {
   R visitIdentifierExpression(IdentifierExpression node);
   R visitLiteralExpression(LiteralExpression node);
   R visitParenthesizedExpression(ParenthesizedExpression node);
+  R visitPropertyExpression(PropertyExpression node);
   R visitTernaryExpression(TernaryExpression node);
+  R visitThisExpression(ThisExpression node);
   R visitUnaryExpression(UnaryExpression node);
   R visitBlockStatement(BlockStatement node);
   R visitBreakStatement(BreakStatement node);
+  R visitClassStatement(ClassStatement node);
   R visitExpressionStatement(ExpressionStatement node);
   R visitFunctionStatement(FunctionStatement node);
   R visitIfStatement(IfStatement node);
@@ -88,6 +91,16 @@ class ParenthesizedExpression extends Expression {
   R accept<R>(AstVisitor<R> visitor) => visitor.visitParenthesizedExpression(this);
 }
 
+class PropertyExpression extends Expression {
+  final Expression context;
+  final Token identifier;
+
+  PropertyExpression(this.context, this.identifier);
+
+  @override
+  R accept<R>(AstVisitor<R> visitor) => visitor.visitPropertyExpression(this);
+}
+
 class TernaryExpression extends Expression {
   final Expression condition;
   final Expression consequent;
@@ -97,6 +110,15 @@ class TernaryExpression extends Expression {
 
   @override
   R accept<R>(AstVisitor<R> visitor) => visitor.visitTernaryExpression(this);
+}
+
+class ThisExpression extends Expression with Resolvable {
+  final Token keyword;
+
+  ThisExpression(this.keyword);
+
+  @override
+  R accept<R>(AstVisitor<R> visitor) => visitor.visitThisExpression(this);
 }
 
 class UnaryExpression extends Expression {
@@ -127,6 +149,16 @@ class BreakStatement extends Statement {
 
   @override
   R accept<R>(AstVisitor<R> visitor) => visitor.visitBreakStatement(this);
+}
+
+class ClassStatement extends Statement {
+  final Token identifier;
+  final List<FunctionStatement> methods;
+
+  ClassStatement(this.identifier, this.methods);
+
+  @override
+  R accept<R>(AstVisitor<R> visitor) => visitor.visitClassStatement(this);
 }
 
 class ExpressionStatement extends Statement {

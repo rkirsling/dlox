@@ -19,7 +19,9 @@ String _typeOf(Object value) =>
   (value == null) ? 'nil' :
   (value is bool) ? 'boolean' :
   (value is double) ? 'number' :
-  (value is String) ? 'string' : 'function';
+  (value is String) ? 'string' :
+  (value is LoxClass) ? 'class' :
+  (value is LoxInstance) ? 'instance' : 'function';
 
 double _castNumberOperand(Object value, Token token) {
   if (value is double) return value;
@@ -118,8 +120,22 @@ class Interpreter implements AstVisitor<Object> {
   }
 
   @override
+  void visitClassStatement(ClassStatement node) {
+    _environment.define(node.identifier.lexeme);
+
+    final methods = <String, LoxFunction>{};
+    for (final method in node.methods) methods[method.identifier.lexeme] = new LoxFunction(method, _environment);
+
+    _environment[node.identifier] = new LoxClass(node.identifier.lexeme, methods);
+  }
+
+  @override
   Object visitLiteralExpression(LiteralExpression node) =>
     node.value;
+
+  @override
+  Object visitThisExpression(ThisExpression node) =>
+    _environment.ancestor(node.depth)[node.keyword];
 
   @override
   Object visitIdentifierExpression(IdentifierExpression node) =>
@@ -128,6 +144,14 @@ class Interpreter implements AstVisitor<Object> {
   @override
   Object visitParenthesizedExpression(ParenthesizedExpression node) =>
     _evaluate(node.expression);
+
+  @override
+  Object visitPropertyExpression(PropertyExpression node) {
+    final context = _evaluate(node.context);
+    if (context is LoxInstance) return context[node.identifier];
+
+    throw new LoxError(node.identifier, 'Cannot get property of ${_typeOf(context)} object.');
+  }
 
   @override
   Object visitCallExpression(CallExpression node) {
@@ -228,6 +252,16 @@ class Interpreter implements AstVisitor<Object> {
     if (lhs is IdentifierExpression) {
       _environment.ancestor(lhs.depth)[lhs.identifier] = value;
       return value;
+    }
+
+    if (lhs is PropertyExpression) {
+      final context = _evaluate(lhs.context);
+      if (context is LoxInstance) {
+        context[lhs.identifier] = value;
+        return value;
+      }
+
+      throw new LoxError(lhs.identifier, 'Cannot set property of ${_typeOf(context)} object.');
     }
 
     assert(false);

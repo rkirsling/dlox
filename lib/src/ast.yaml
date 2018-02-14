@@ -25,14 +25,22 @@ Statement:
     - Token identifier
     - List<Token> parameters
     - List<Statement> statements
+  ClassStatement:
+    - Token identifier
+    - List<FunctionStatement> methods
 
 Expression:
   LiteralExpression:
     - Object value
+  ThisExpression with Resolvable:
+    - Token keyword
   IdentifierExpression with Resolvable:
     - Token identifier
   ParenthesizedExpression:
     - Expression expression
+  PropertyExpression:
+    - Expression context
+    - Token identifier
   CallExpression:
     - Expression callee
     - Token parenthesis

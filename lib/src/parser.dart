@@ -34,11 +34,33 @@ class Parser {
   Statement _parseStatement({bool inBlock = false}) {
     try {
       return
+        _advanceIf(TokenType.$class) ? _parseClass() :
         _advanceIf(TokenType.$fun) ? _parseFunction() :
         _advanceIf(TokenType.$var) ? _parseVariable() : _parseNonDeclaration();
     } on LoxError catch (error) {
       _errorReporter.report(error, isDynamic: false);
       _synchronizeStatement(inBlock: inBlock);
+      return null;
+    }
+  }
+
+  ClassStatement _parseClass() {
+    final identifier = _expect(TokenType.identifier, 'Expected class name.');
+    _expect(TokenType.leftBrace, 'Expected \'{\' before class body.');
+
+    final methods = <FunctionStatement>[];
+    while (!_peekIs(TokenType.rightBrace) && !_isAtEnd()) methods.add(_parseMethod());
+
+    _expect(TokenType.rightBrace, 'Expected \'}\' after class body.');
+    return new ClassStatement(identifier, methods);
+  }
+
+  FunctionStatement _parseMethod() {
+    try {
+      return _parseFunction(isMethod: true);
+    } on LoxError catch (error) {
+      _errorReporter.report(error, isDynamic: false);
+      _synchronizeMethod();
       return null;
     }
   }
@@ -150,7 +172,7 @@ class Parser {
     if (!_peekIs(TokenType.equal)) return expression;
 
     final operator = _advance();
-    if (expression is IdentifierExpression) {
+    if (expression is PropertyExpression || expression is IdentifierExpression) {
       final rhs = _parseAssignment();
       return new AssignmentExpression(expression, rhs);
     }
@@ -199,21 +221,28 @@ class Parser {
   }
 
   Expression _parseUnary() {
-    if (!_peekIsIn([TokenType.bang, TokenType.minus])) return _parseCall();
+    if (!_peekIsIn([TokenType.bang, TokenType.minus])) return _parseCallOrProperty();
 
     final operator = _advance();
     final operand = _parseUnary();
     return new UnaryExpression(operator, operand);
   }
 
-  Expression _parseCall() {
+  Expression _parseCallOrProperty() {
     var expression = _parsePrimary();
 
-    while (_peekIs(TokenType.leftParen)) {
-      final parenthesis = _advance();
-      final arguments = _parseParameterOrArgumentList(_parseExpression);
-      _expect(TokenType.rightParen, 'Expected \')\' after argument list.');
-      expression = new CallExpression(expression, parenthesis, arguments);
+    while (_peekIsIn([TokenType.leftParen, TokenType.dot])) {
+      final operator = _advance();
+
+      if (operator.type == TokenType.leftParen) {
+        final arguments = _parseParameterOrArgumentList(_parseExpression);
+        _expect(TokenType.rightParen, 'Expected \')\' after argument list.');
+        expression = new CallExpression(expression, operator, arguments);
+        continue;
+      }
+
+      final identifier = _expect(TokenType.identifier, 'Expected property name.');
+      expression = new PropertyExpression(expression, identifier);
     }
 
     return expression;
@@ -225,6 +254,7 @@ class Parser {
     return
       _advanceIf(TokenType.leftParen) ? _parseParenthesized() :
       _advanceIf(TokenType.identifier) ? new IdentifierExpression(token) :
+      _advanceIf(TokenType.$this) ? new ThisExpression(token) :
       _advanceIf(TokenType.$nil) ? new LiteralExpression(null) :
       _advanceIf(TokenType.$true) ? new LiteralExpression(true) :
       _advanceIf(TokenType.$false) ? new LiteralExpression(false) :
@@ -289,6 +319,15 @@ class Parser {
       _advanceIf(TokenType.semicolon) ||
       _peekIs(TokenType.rightBrace) && inBlock ||
       _peekIsIn(_statementOpeners);
+
+    while (!isSynchronized()) _advance();
+  }
+
+  void _synchronizeMethod() {
+    bool isSynchronized() =>
+      _isAtEnd() ||
+      _peekIs(TokenType.rightBrace) ||
+      _advanceIf(TokenType.leftBrace) && _parseBlock() != null;
 
     while (!isSynchronized()) _advance();
   }

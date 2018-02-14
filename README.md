@@ -9,3 +9,5 @@ Supported language extensions:
 - Coercing string concatenation operator (`10 + "ms"`)
 - Error on global redefinition (`var x = 1; var x = 2;`)
 - Break statement (`break;`)
+- Error on method redefinition (`class C { f() {} f() {} }`)
+- Error on class initializer access (`instance.init`)

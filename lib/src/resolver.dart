@@ -2,11 +2,22 @@ import 'ast.dart';
 import 'error_reporter.dart';
 import 'token.dart';
 
+class _Loop {}
+
+class _Function {
+  final bool isInitializer;
+
+  _Function({this.isInitializer = false});
+}
+
+class _Class {}
+
 class Resolver implements AstVisitor<void> {
   final ErrorReporter _errorReporter;
   final List<Set<String>> _scopeStack = [new Set()];
-  int _loopDepth = 0;
-  int _functionDepth = 0;
+  _Loop _currentLoop;
+  _Function _currentFunction;
+  _Class _currentClass;
   String _toBeDefined;
 
   Resolver(this._errorReporter);
@@ -47,19 +58,25 @@ class Resolver implements AstVisitor<void> {
   @override
   void visitWhileStatement(WhileStatement node) {
     _resolve(node.condition);
-    _loopDepth++;
+
+    final previous = _currentLoop;
+    _currentLoop = new _Loop();
     _resolve(node.body);
-    _loopDepth--;
+    _currentLoop = previous;
   }
 
   @override
   void visitBreakStatement(BreakStatement node) {
-    if (_loopDepth < 1) _error(node.keyword, '\'break\' used outside of loop.');
+    if (_currentLoop == null) _error(node.keyword, '\'break\' used outside of loop.');
   }
 
   @override
   void visitReturnStatement(ReturnStatement node) {
-    if (_functionDepth < 1) _error(node.keyword, '\'return\' used outside of function.');
+    if (_currentFunction == null) {
+      _error(node.keyword, '\'return\' used outside of function.');
+    } else if (_currentFunction.isInitializer) {
+      _error(node.keyword, '\'return\' used in class initializer.');
+    }
 
     if (node.expression == null) return;
 
@@ -79,17 +96,40 @@ class Resolver implements AstVisitor<void> {
   @override
   void visitFunctionStatement(FunctionStatement node) {
     _declare(node.identifier);
+    _resolveFunction(node.parameters, node.statements);
+  }
 
+  @override
+  void visitClassStatement(ClassStatement node) {
+    _declare(node.identifier);
+
+    final previous = _currentClass;
+    _currentClass = new _Class();
     _scopeStack.add(new Set());
-    node.parameters.forEach(_declare);
-    _functionDepth++;
-    node.statements.forEach(_resolve);
-    _functionDepth--;
+    _scopeStack.last.add('this');
+
+    final methodNames = new Set<String>();
+    for (final method in node.methods) {
+      final name = method.identifier.lexeme;
+      if (methodNames.contains(name)) _error(method.identifier, 'Method \'$name\' is already defined for this class.');
+
+      _resolveFunction(method.parameters, method.statements, isInitializer: name == 'init');
+      methodNames.add(name);
+    }
+
     _scopeStack.removeLast();
+    _currentClass = previous;
   }
 
   @override
   void visitLiteralExpression(LiteralExpression node) {}
+
+  @override
+  void visitThisExpression(ThisExpression node) {
+    if (_currentClass == null) _error(node.keyword, '\'this\' used outside of class.');
+
+    _resolveReference(node, 'this');
+  }
 
   @override
   void visitIdentifierExpression(IdentifierExpression node) {
@@ -102,6 +142,11 @@ class Resolver implements AstVisitor<void> {
   @override
   void visitParenthesizedExpression(ParenthesizedExpression node) {
     _resolve(node.expression);
+  }
+
+  @override
+  void visitPropertyExpression(PropertyExpression node) {
+    _resolve(node.context);
   }
 
   @override
@@ -132,6 +177,18 @@ class Resolver implements AstVisitor<void> {
   void visitAssignmentExpression(AssignmentExpression node) {
     _resolve(node.rhs);
     _resolve(node.lhs);
+  }
+
+  void _resolveFunction(List<Token> parameters, List<Statement> statements, {bool isInitializer = false}) {
+    final previous = _currentFunction;
+    _currentFunction = new _Function(isInitializer: isInitializer);
+    _scopeStack.add(new Set());
+
+    parameters.forEach(_declare);
+    statements.forEach(_resolve);
+
+    _scopeStack.removeLast();
+    _currentFunction = previous;
   }
 
   void _resolve(AstNode node) {
