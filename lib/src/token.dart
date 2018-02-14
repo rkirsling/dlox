@@ -57,7 +57,7 @@ class Token {
   final int line;
   final int column;
 
-  const Token(this.type, this.lexeme, this.line, this.column);
+  Token(this.type, this.lexeme, this.line, this.column);
 
   @override
   String toString() => lexeme;

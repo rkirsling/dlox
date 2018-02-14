@@ -38,7 +38,7 @@ class Parser {
         _advanceIf(TokenType.$var) ? _parseVariable() : _parseNonDeclaration();
     } on LoxError catch (error) {
       _errorReporter.report(error, isDynamic: false);
-      _synchronize(inBlock);
+      _synchronizeStatement(inBlock: inBlock);
       return null;
     }
   }
@@ -283,16 +283,14 @@ class Parser {
     _advance();
   }
 
-  void _synchronize(bool inBlock) {
-    while (!_isAtEnd()) {
-      if (_advanceIf(TokenType.semicolon)) return;
+  void _synchronizeStatement({bool inBlock = false}) {
+    bool isSynchronized() =>
+      _isAtEnd() ||
+      _advanceIf(TokenType.semicolon) ||
+      _peekIs(TokenType.rightBrace) && inBlock ||
+      _peekIsIn(_statementOpeners);
 
-      if (_peekIs(TokenType.rightBrace) && inBlock) return;
-
-      if (_peekIsIn(_statementOpeners)) return;
-
-      _advance();
-    }
+    while (!isSynchronized()) _advance();
   }
 
   void _error(String message) {

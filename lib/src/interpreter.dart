@@ -18,7 +18,8 @@ String _stringify(Object value) =>
 String _typeOf(Object value) =>
   (value == null) ? 'nil' :
   (value is bool) ? 'boolean' :
-  (value is double) ? 'number' : 'string';
+  (value is double) ? 'number' :
+  (value is String) ? 'string' : 'function';
 
 double _castNumberOperand(Object value, Token token) {
   if (value is double) return value;
@@ -107,13 +108,13 @@ class Interpreter implements AstVisitor<Object> {
   @override
   void visitVariableStatement(VariableStatement node) {
     final value = (node.initializer == null) ? null : _evaluate(node.initializer);
-    _environment.define(node.identifier, value);
+    _environment.define(node.identifier.lexeme, value);
   }
 
   @override
   void visitFunctionStatement(FunctionStatement node) {
-    final function = new LoxFunction(node, _environment);
-    _environment.define(node.identifier, function);
+    final value = new LoxFunction(node, _environment);
+    _environment.define(node.identifier.lexeme, value);
   }
 
   @override

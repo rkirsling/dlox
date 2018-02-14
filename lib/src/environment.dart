@@ -20,10 +20,8 @@ class Environment {
     return environment;
   }
 
-  void define(Token identifier, Object value) {
-    final name = identifier.lexeme;
+  void define(String name, [Object value]) {
     assert(!_scope.containsKey(name));
-
     _scope[name] = value;
   }
 

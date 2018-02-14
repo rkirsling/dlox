@@ -27,7 +27,7 @@ class LoxFunction implements Callable {
   @override
   Object call(InterpretFunction interpret, List arguments) {
     final environment = new Environment.child(_closure);
-    for (var i = 0; i < arity; i++) environment.define(_declaration.parameters[i], arguments[i]);
+    for (var i = 0; i < arity; i++) environment.define(_declaration.parameters[i].lexeme, arguments[i]);
 
     try {
       interpret(_declaration.statements, environment);
