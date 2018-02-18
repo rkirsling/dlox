@@ -42,7 +42,11 @@ void _runPrompt() {
 
   for (var line = 1; ; line++) {
     stdout.write('dlox:$line> ');
-    _run(stdin.readLineSync(), line);
+
+    _resolver.saveGlobals();
+    final code = _run(stdin.readLineSync(), line);
+    if (code != _successCode) _resolver.restoreGlobals();
+
     _errorReporter.reset();
   }
 }

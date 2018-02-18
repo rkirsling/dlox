@@ -15,6 +15,7 @@ class _Class {}
 class Resolver implements AstVisitor<void> {
   final ErrorReporter _errorReporter;
   final List<Set<String>> _scopeStack = [new Set()];
+  Set<String> _savedGlobals;
   _Loop _currentLoop;
   _Function _currentFunction;
   _Class _currentClass;
@@ -23,10 +24,15 @@ class Resolver implements AstVisitor<void> {
   Resolver(this._errorReporter);
 
   void resolve(List<Statement> statements) {
-    final previousGlobals = new Set<String>.from(_scopeStack.first);
-
     statements.forEach(_resolve);
-    if (_errorReporter.errorCount > 0) _scopeStack.first.retainAll(previousGlobals);
+  }
+
+  void saveGlobals() {
+    _savedGlobals = new Set<String>.from(_scopeStack.first);
+  }
+
+  void restoreGlobals() {
+    _scopeStack.first.retainAll(_savedGlobals);
   }
 
   @override
