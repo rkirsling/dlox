@@ -3,13 +3,8 @@ import 'error_reporter.dart';
 import 'token.dart';
 
 class _Loop {}
-
-class _Function {
-  final bool isInitializer;
-
-  _Function({this.isInitializer = false});
-}
-
+class _Function {}
+class _Initializer extends _Function {}
 class _Class {}
 
 class Resolver implements AstVisitor<void> {
@@ -19,7 +14,7 @@ class Resolver implements AstVisitor<void> {
   _Loop _currentLoop;
   _Function _currentFunction;
   _Class _currentClass;
-  String _toBeDefined;
+  String _nameToDeclare;
 
   Resolver(this._errorReporter);
 
@@ -56,9 +51,7 @@ class Resolver implements AstVisitor<void> {
   void visitIfStatement(IfStatement node) {
     _resolve(node.condition);
     _resolve(node.consequent);
-    if (node.alternative == null) return;
-
-    _resolve(node.alternative);
+    _resolveOptional(node.alternative);
   }
 
   @override
@@ -80,23 +73,20 @@ class Resolver implements AstVisitor<void> {
   void visitReturnStatement(ReturnStatement node) {
     if (_currentFunction == null) {
       _error(node.keyword, '\'return\' used outside of function.');
-    } else if (_currentFunction.isInitializer) {
+    } else if (_currentFunction is _Initializer) {
       _error(node.keyword, '\'return\' used in class initializer.');
     }
 
-    if (node.expression == null) return;
-
-    _resolve(node.expression);
+    _resolveOptional(node.expression);
   }
 
   @override
   void visitVariableStatement(VariableStatement node) {
     _declare(node.identifier);
-    if (node.initializer == null) return;
 
-    _toBeDefined = node.identifier.lexeme;
-    _resolve(node.initializer);
-    _toBeDefined = null;
+    _nameToDeclare = node.identifier.lexeme;
+    _resolveOptional(node.initializer);
+    _nameToDeclare = null;
   }
 
   @override
@@ -108,6 +98,7 @@ class Resolver implements AstVisitor<void> {
   @override
   void visitClassStatement(ClassStatement node) {
     _declare(node.identifier);
+    _resolveOptional(node.superclass);
 
     final previous = _currentClass;
     _currentClass = new _Class();
@@ -140,7 +131,7 @@ class Resolver implements AstVisitor<void> {
   @override
   void visitIdentifierExpression(IdentifierExpression node) {
     final name = node.identifier.lexeme;
-    if (name == _toBeDefined) _error(node.identifier, 'Identifier \'$name\' is referenced in its own definition.');
+    if (name == _nameToDeclare) _error(node.identifier, 'Identifier \'$name\' is referenced in its own declaration.');
 
     _resolveReference(node, name);
   }
@@ -187,7 +178,7 @@ class Resolver implements AstVisitor<void> {
 
   void _resolveFunction(List<Token> parameters, List<Statement> statements, {bool isInitializer = false}) {
     final previous = _currentFunction;
-    _currentFunction = new _Function(isInitializer: isInitializer);
+    _currentFunction = isInitializer ? new _Initializer() : new _Function();
     _scopeStack.add(new Set());
 
     parameters.forEach(_declare);
@@ -199,6 +190,12 @@ class Resolver implements AstVisitor<void> {
 
   void _resolve(AstNode node) {
     node.accept(this);
+  }
+
+  void _resolveOptional(AstNode node) {
+    if (node == null) return;
+
+    _resolve(node);
   }
 
   void _declare(Token identifier) {

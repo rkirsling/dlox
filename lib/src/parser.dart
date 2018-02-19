@@ -45,7 +45,7 @@ class Parser {
   }
 
   ClassStatement _parseClass() {
-    final identifier = _expect(TokenType.identifier, 'Expected class name.');
+    final identifier = _expectIdentifier('class');
     _expect(TokenType.leftBrace, 'Expected \'{\' before class body.');
 
     final methods = <FunctionStatement>[];
@@ -66,10 +66,10 @@ class Parser {
   }
 
   FunctionStatement _parseFunction({bool isMethod = false}) {
-    final identifier = _expect(TokenType.identifier, 'Expected ${isMethod ? 'method' : 'function'} name.');
+    final identifier = _expectIdentifier(isMethod ? 'method' : 'function');
 
     _expect(TokenType.leftParen, 'Expected \'(\' before parameter list.');
-    final parameters = _parseParameterOrArgumentList(() => _expect(TokenType.identifier, 'Expected parameter name.'));
+    final parameters = _parseParameterOrArgumentList(() => _expectIdentifier('parameter'));
     _expect(TokenType.rightParen, 'Expected \')\' after parameter list.');
 
     _expect(TokenType.leftBrace, 'Expected \'{\'.');
@@ -78,7 +78,7 @@ class Parser {
   }
 
   VariableStatement _parseVariable() {
-    final identifier = _expect(TokenType.identifier, 'Expected variable name.');
+    final identifier = _expectIdentifier('variable');
     final initializer = _advanceIf(TokenType.equal) ? _parseExpression() : null;
     _expectSemicolon();
     return new VariableStatement(identifier, initializer);
@@ -172,12 +172,12 @@ class Parser {
     if (!_peekIs(TokenType.equal)) return expression;
 
     final operator = _advance();
-    if (expression is PropertyExpression || expression is IdentifierExpression) {
-      final rhs = _parseAssignment();
-      return new AssignmentExpression(expression, rhs);
+    if (expression is! PropertyExpression && expression is! IdentifierExpression) {
+      throw new LoxError(operator, 'Invalid left-hand side of assignment.');
     }
 
-    throw new LoxError(operator, 'Invalid left-hand side of assignment.');
+    final rhs = _parseAssignment();
+    return new AssignmentExpression(expression, rhs);
   }
 
   Expression _parseTernary() {
@@ -241,7 +241,7 @@ class Parser {
         continue;
       }
 
-      final identifier = _expect(TokenType.identifier, 'Expected property name.');
+      final identifier = _expectIdentifier('property');
       expression = new PropertyExpression(expression, identifier);
     }
 
@@ -298,10 +298,10 @@ class Parser {
     return isMatch;
   }
 
-  Token _expect(TokenType type, String errorMessage) {
+  void _expect(TokenType type, String errorMessage) {
     if (!_peekIs(type)) throw new LoxError(_peek(), errorMessage);
 
-    return _advance();
+    _advance();
   }
 
   void _expectSemicolon() {
@@ -311,6 +311,12 @@ class Parser {
     }
 
     _advance();
+  }
+
+  Token _expectIdentifier(String kind) {
+    if (!_peekIs(TokenType.identifier)) throw new LoxError(_peek(), 'Expected $kind name.');
+
+    return _advance();
   }
 
   void _synchronizeStatement({bool inBlock = false}) {

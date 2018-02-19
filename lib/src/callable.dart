@@ -3,6 +3,8 @@ import 'environment.dart';
 import 'error_reporter.dart';
 import 'token.dart';
 
+const Token $this = const Token(TokenType.$this, 'this', null, null);
+
 typedef InterpretFunction = void Function(List<Statement>, Environment);
 
 class Return implements Exception {
@@ -29,7 +31,7 @@ class LoxFunction implements Callable {
   @override
   Object call(InterpretFunction interpret, List arguments) {
     final environment = new Environment.child(_closure);
-    for (var i = 0; i < arity; i++) environment.define(_declaration.parameters[i].lexeme, arguments[i]);
+    for (var i = 0; i < arity; i++) environment.define(_declaration.parameters[i], arguments[i]);
 
     try {
       interpret(_declaration.statements, environment);
@@ -41,7 +43,7 @@ class LoxFunction implements Callable {
   }
 
   LoxFunction bind(LoxInstance context) {
-    final environment = new Environment.child(_closure)..define('this', context);
+    final environment = new Environment.child(_closure)..define($this, context);
     return new LoxFunction(_declaration, environment);
   }
 

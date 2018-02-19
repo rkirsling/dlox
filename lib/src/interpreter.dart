@@ -23,17 +23,18 @@ String _typeOf(Object value) =>
   (value is LoxClass) ? 'class' :
   (value is LoxInstance) ? 'instance' : 'function';
 
-double _castNumberOperand(Object value, Token token) {
-  if (value is double) return value;
+// TODO: Genericize once Dart 2 is available.
+double _castDouble(Object value, Token token, String message) =>
+  value is double ? value : throw new LoxError(token, message);
 
-  throw new LoxError(token, 'Expected operand to be a number.');
-}
+String _castString(Object value, Token token, String message) =>
+  value is String ? value : throw new LoxError(token, message);
 
-String _castStringOperand(Object value, Token token) {
-  if (value is String) return value;
+LoxInstance _castLoxInstance(Object value, Token token, String message) =>
+  value is LoxInstance ? value : throw new LoxError(token, message);
 
-  throw new LoxError(token, 'Expected operand to be a string.');
-}
+Callable _castCallable(Object value, Token token, String message) =>
+  value is Callable ? value : throw new LoxError(token, message);
 
 class Break implements Exception {}
 
@@ -81,9 +82,10 @@ class Interpreter implements AstVisitor<Object> {
   void visitIfStatement(IfStatement node) {
     if (_isTruthy(_evaluate(node.condition))) {
       _evaluate(node.consequent);
-    } else if (node.alternative != null) {
-      _evaluate(node.alternative);
+      return;
     }
+
+    _evaluateOptional(node.alternative);
   }
 
   @override
@@ -104,24 +106,22 @@ class Interpreter implements AstVisitor<Object> {
 
   @override
   void visitReturnStatement(ReturnStatement node) {
-    throw new Return(node.expression == null ? null : _evaluate(node.expression));
+    throw new Return(_evaluateOptional(node.expression));
   }
 
   @override
   void visitVariableStatement(VariableStatement node) {
-    final value = (node.initializer == null) ? null : _evaluate(node.initializer);
-    _environment.define(node.identifier.lexeme, value);
+    _environment.define(node.identifier, _evaluateOptional(node.initializer));
   }
 
   @override
   void visitFunctionStatement(FunctionStatement node) {
-    final value = new LoxFunction(node, _environment);
-    _environment.define(node.identifier.lexeme, value);
+    _environment.define(node.identifier, new LoxFunction(node, _environment));
   }
 
   @override
   void visitClassStatement(ClassStatement node) {
-    _environment.define(node.identifier.lexeme);
+    _environment.define(node.identifier, null);
 
     final methods = <String, LoxFunction>{};
     for (final method in node.methods) methods[method.identifier.lexeme] = new LoxFunction(method, _environment);
@@ -147,33 +147,27 @@ class Interpreter implements AstVisitor<Object> {
 
   @override
   Object visitPropertyExpression(PropertyExpression node) {
-    final context = _evaluate(node.context);
-    if (context is LoxInstance) return context[node.identifier];
-
-    throw new LoxError(node.identifier, 'Cannot get property of ${_typeOf(context)} object.');
+    final context = _evaluateToLoxInstance(node.context, node.identifier, (type) => 'Cannot get property of $type.');
+    return context[node.identifier];
   }
 
   @override
   Object visitCallExpression(CallExpression node) {
-    final callee = _evaluate(node.callee);
-
-    if (callee is Callable) {
-      if (node.arguments.length != callee.arity) {
-        throw new LoxError(node.parenthesis, 'Expected ${callee.arity} arguments but found ${node.arguments.length}.');
-      }
-
-      final arguments = node.arguments.map(_evaluate).toList();
-      return callee.call(interpretBlock, arguments);
+    final callee = _evaluateToCallable(node.callee, node.parenthesis, (type) => 'Cannot call $type.');
+    if (node.arguments.length != callee.arity) {
+      throw new LoxError(node.parenthesis, 'Expected ${callee.arity} arguments but found ${node.arguments.length}.');
     }
 
-    throw new LoxError(node.parenthesis, 'Cannot call ${_typeOf(callee)} object.');
+    final arguments = node.arguments.map(_evaluate).toList();
+    return callee.call(interpretBlock, arguments);
   }
 
   @override
   Object visitUnaryExpression(UnaryExpression node) {
     final operand = _evaluate(node.operand);
 
-    double asNumber(Object value) => _castNumberOperand(value, node.operator);
+    final op = node.operator.lexeme;
+    double asNumber(Object value) => _castDouble(value, node.operator, 'Cannot apply \'$op\' to ${_typeOf(value)}.');
 
     switch (node.operator.type) {
       case TokenType.bang:
@@ -193,8 +187,9 @@ class Interpreter implements AstVisitor<Object> {
 
     final rightOperand = _evaluate(node.rightOperand);
 
-    double asNumber(Object value) => _castNumberOperand(value, node.operator);
-    String asString(Object value) => _castStringOperand(value, node.operator);
+    final op = node.operator.lexeme;
+    double asNumber(Object value) => _castDouble(value, node.operator, 'Cannot apply \'$op\' to ${_typeOf(value)}.');
+    String asString(Object value) => _castString(value, node.operator, 'Cannot apply \'$op\' to ${_typeOf(value)}.');
 
     switch (node.operator.type) {
       case TokenType.$or:
@@ -246,27 +241,33 @@ class Interpreter implements AstVisitor<Object> {
 
   @override
   Object visitAssignmentExpression(AssignmentExpression node) {
-    final value = _evaluate(node.rhs);
+    final rhs = _evaluate(node.rhs);
+
     final lhs = node.lhs;
-
     if (lhs is IdentifierExpression) {
-      _environment.ancestor(lhs.depth)[lhs.identifier] = value;
-      return value;
+      _environment.ancestor(lhs.depth)[lhs.identifier] = rhs;
+    } else if (lhs is PropertyExpression) {
+      final context = _evaluateToLoxInstance(lhs.context, lhs.identifier, (type) => 'Cannot set property of $type.');
+      context[lhs.identifier] = rhs;
+    } else {
+      assert(false);
     }
 
-    if (lhs is PropertyExpression) {
-      final context = _evaluate(lhs.context);
-      if (context is LoxInstance) {
-        context[lhs.identifier] = value;
-        return value;
-      }
-
-      throw new LoxError(lhs.identifier, 'Cannot set property of ${_typeOf(context)} object.');
-    }
-
-    assert(false);
-    return null;
+    return rhs;
   }
 
   Object _evaluate(AstNode node) => node.accept(this);
+
+  Object _evaluateOptional(AstNode node) => node == null ? null : _evaluate(node);
+
+  // TODO: Genericize once Dart 2 is available.
+  LoxInstance _evaluateToLoxInstance(AstNode node, Token token, String Function(String) typedMessage) {
+    final value = _evaluate(node);
+    return _castLoxInstance(value, token, typedMessage(_typeOf(value)));
+  }
+
+  Callable _evaluateToCallable(AstNode node, Token token, String Function(String) typedMessage) {
+    final value = _evaluate(node);
+    return _castCallable(value, token, typedMessage(_typeOf(value)));
+  }
 }
