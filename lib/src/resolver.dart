@@ -6,6 +6,7 @@ class _Loop {}
 class _Function {}
 class _Initializer extends _Function {}
 class _Class {}
+class _DerivedClass extends _Class {}
 
 class Resolver implements AstVisitor<void> {
   final ErrorReporter _errorReporter;
@@ -97,13 +98,15 @@ class Resolver implements AstVisitor<void> {
 
   @override
   void visitClassStatement(ClassStatement node) {
+    _resolveOptional(node.superclass);
     _declare(node.identifier);
     _resolveOptional(node.superclass);
 
     final previous = _currentClass;
-    _currentClass = new _Class();
+    _currentClass = node.superclass != null ? new _DerivedClass() : new _Class();
     _scopeStack.add(new Set());
     _scopeStack.last.add('this');
+    if (node.superclass != null) _scopeStack.last.add('super');
 
     final methodNames = new Set<String>();
     for (final method in node.methods) {
@@ -139,6 +142,17 @@ class Resolver implements AstVisitor<void> {
   @override
   void visitParenthesizedExpression(ParenthesizedExpression node) {
     _resolve(node.expression);
+  }
+
+  @override
+  void visitSuperExpression(SuperExpression node) {
+    if (_currentClass == null) {
+      _error(node.keyword, '\'super\' used outside of class.');
+    } else if (_currentClass is! _DerivedClass) {
+      _error(node.keyword, '\'super\' used in non-derived class.');
+    }
+
+    _resolveReference(node, 'super');
   }
 
   @override

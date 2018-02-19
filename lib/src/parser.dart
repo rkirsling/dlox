@@ -46,13 +46,14 @@ class Parser {
 
   ClassStatement _parseClass() {
     final identifier = _expectIdentifier('class');
+    final superclass = _advanceIf(TokenType.less) ? new IdentifierExpression(_expectIdentifier('superclass')) : null;
     _expect(TokenType.leftBrace, 'Expected \'{\' before class body.');
 
     final methods = <FunctionStatement>[];
     while (!_peekIs(TokenType.rightBrace) && !_isAtEnd()) methods.add(_parseMethod());
 
     _expect(TokenType.rightBrace, 'Expected \'}\' after class body.');
-    return new ClassStatement(identifier, methods);
+    return new ClassStatement(identifier, superclass, methods);
   }
 
   FunctionStatement _parseMethod() {
@@ -252,6 +253,7 @@ class Parser {
     final token = _peek();
 
     return
+      _peekIs(TokenType.$super) ? _parseSuper() :
       _advanceIf(TokenType.leftParen) ? _parseParenthesized() :
       _advanceIf(TokenType.identifier) ? new IdentifierExpression(token) :
       _advanceIf(TokenType.$this) ? new ThisExpression(token) :
@@ -261,6 +263,13 @@ class Parser {
       _advanceIf(TokenType.string) ? new LiteralExpression(_stringParse(token.lexeme)) :
       _advanceIf(TokenType.number) ? new LiteralExpression(double.parse(token.lexeme)) :
         throw new LoxError(token, _isAtEnd() ? 'Unexpected end of input.' : 'Unexpected token \'${token.lexeme}\'.');
+  }
+
+  SuperExpression _parseSuper() {
+    final keyword = _advance();
+    _expect(TokenType.dot, 'Expected \'.\' after \'super\'.');
+    final identifier = _expectIdentifier('superclass method');
+    return new SuperExpression(keyword, identifier);
   }
 
   ParenthesizedExpression _parseParenthesized() {

@@ -27,6 +27,7 @@ Statement:
     - List<Statement> statements
   ClassStatement:
     - Token identifier
+    - IdentifierExpression superclass
     - List<FunctionStatement> methods
 
 Expression:
@@ -38,6 +39,9 @@ Expression:
     - Token identifier
   ParenthesizedExpression:
     - Expression expression
+  SuperExpression with Resolvable:
+    - Token keyword
+    - Token identifier
   PropertyExpression:
     - Expression context
     - Token identifier

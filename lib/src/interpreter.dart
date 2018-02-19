@@ -30,6 +30,9 @@ double _castDouble(Object value, Token token, String message) =>
 String _castString(Object value, Token token, String message) =>
   value is String ? value : throw new LoxError(token, message);
 
+LoxClass _castLoxClass(Object value, Token token, String message) =>
+  value is LoxClass ? value : throw new LoxError(token, message);
+
 LoxInstance _castLoxInstance(Object value, Token token, String message) =>
   value is LoxInstance ? value : throw new LoxError(token, message);
 
@@ -121,12 +124,9 @@ class Interpreter implements AstVisitor<Object> {
 
   @override
   void visitClassStatement(ClassStatement node) {
-    _environment.define(node.identifier, null);
-
-    final methods = <String, LoxFunction>{};
-    for (final method in node.methods) methods[method.identifier.lexeme] = new LoxFunction(method, _environment);
-
-    _environment[node.identifier] = new LoxClass(node.identifier.lexeme, methods);
+    final superToken = node.superclass?.identifier;
+    final superclass = _evaluateOptionalToLoxClass(node.superclass, superToken, (type) => 'Cannot extend from $type.');
+    _environment.define(node.identifier, new LoxClass(node.identifier.lexeme, superclass, node.methods, _environment));
   }
 
   @override
@@ -144,6 +144,12 @@ class Interpreter implements AstVisitor<Object> {
   @override
   Object visitParenthesizedExpression(ParenthesizedExpression node) =>
     _evaluate(node.expression);
+
+  @override
+  Object visitSuperExpression(SuperExpression node) {
+    final instance = _environment.ancestor(node.depth)[$this] as LoxInstance;
+    return instance.getSuperMethod(node.identifier);
+  }
 
   @override
   Object visitPropertyExpression(PropertyExpression node) {
@@ -269,5 +275,12 @@ class Interpreter implements AstVisitor<Object> {
   Callable _evaluateToCallable(AstNode node, Token token, String Function(String) typedMessage) {
     final value = _evaluate(node);
     return _castCallable(value, token, typedMessage(_typeOf(value)));
+  }
+
+  LoxClass _evaluateOptionalToLoxClass(AstNode node, Token token, String Function(String) typedMessage) {
+    if (node == null) return null;
+
+    final value = _evaluate(node);
+    return _castLoxClass(value, token, typedMessage(_typeOf(value)));
   }
 }

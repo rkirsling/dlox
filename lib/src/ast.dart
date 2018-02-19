@@ -11,6 +11,7 @@ abstract class AstVisitor<R> {
   R visitLiteralExpression(LiteralExpression node);
   R visitParenthesizedExpression(ParenthesizedExpression node);
   R visitPropertyExpression(PropertyExpression node);
+  R visitSuperExpression(SuperExpression node);
   R visitTernaryExpression(TernaryExpression node);
   R visitThisExpression(ThisExpression node);
   R visitUnaryExpression(UnaryExpression node);
@@ -101,6 +102,16 @@ class PropertyExpression extends Expression {
   R accept<R>(AstVisitor<R> visitor) => visitor.visitPropertyExpression(this);
 }
 
+class SuperExpression extends Expression with Resolvable {
+  final Token keyword;
+  final Token identifier;
+
+  SuperExpression(this.keyword, this.identifier);
+
+  @override
+  R accept<R>(AstVisitor<R> visitor) => visitor.visitSuperExpression(this);
+}
+
 class TernaryExpression extends Expression {
   final Expression condition;
   final Expression consequent;
@@ -153,9 +164,10 @@ class BreakStatement extends Statement {
 
 class ClassStatement extends Statement {
   final Token identifier;
+  final IdentifierExpression superclass;
   final List<FunctionStatement> methods;
 
-  ClassStatement(this.identifier, this.methods);
+  ClassStatement(this.identifier, this.superclass, this.methods);
 
   @override
   R accept<R>(AstVisitor<R> visitor) => visitor.visitClassStatement(this);

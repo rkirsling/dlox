@@ -4,6 +4,7 @@ import 'error_reporter.dart';
 import 'token.dart';
 
 const Token $this = const Token(TokenType.$this, 'this', null, null);
+const Token $super = const Token(TokenType.$super, 'super', null, null);
 
 typedef InterpretFunction = void Function(List<Statement>, Environment);
 
@@ -22,8 +23,9 @@ abstract class Callable {
 class LoxFunction implements Callable {
   final FunctionStatement _declaration;
   final Environment _closure;
+  final LoxClass _class;
 
-  LoxFunction(this._declaration, this._closure);
+  LoxFunction(this._declaration, this._closure, [this._class]);
 
   @override
   int get arity => _declaration.parameters.length;
@@ -43,7 +45,11 @@ class LoxFunction implements Callable {
   }
 
   LoxFunction bind(LoxInstance context) {
+    assert(_class != null);
+
     final environment = new Environment.child(_closure)..define($this, context);
+    if (_class.superclass != null) environment.define($super, _class.superclass);
+
     return new LoxFunction(_declaration, environment);
   }
 
@@ -53,9 +59,12 @@ class LoxFunction implements Callable {
 
 class LoxClass implements Callable {
   final String name;
-  final Map<String, LoxFunction> _methods;
+  final LoxClass superclass;
+  final Map<String, LoxFunction> _methods = {};
 
-  LoxClass(this.name, this._methods);
+  LoxClass(this.name, this.superclass, List<FunctionStatement> methods, Environment environment) {
+    for (final method in methods) _methods[method.identifier.lexeme] = new LoxFunction(method, environment, this);
+  }
 
   @override
   int get arity => _methods['init']?.arity ?? 0;
@@ -70,7 +79,8 @@ class LoxClass implements Callable {
     return instance;
   }
 
-  LoxFunction findMethod(LoxInstance instance, String name) => _methods[name]?.bind(instance);
+  LoxFunction findMethod(LoxInstance context, String name) =>
+    _methods[name]?.bind(context) ?? superclass?.findMethod(context, name);
 
   @override
   String toString() => '<class $name>';
@@ -97,6 +107,16 @@ class LoxInstance {
     if (value == null) throw new LoxError(identifier, 'Property \'$name\' is undefined.');
 
     return value;
+  }
+
+  LoxFunction getSuperMethod(Token identifier) {
+    final name = identifier.lexeme;
+    assert(_class.superclass != null);
+
+    final method = _class.superclass.findMethod(this, name);
+    if (method == null) throw new LoxError(identifier, 'Superclass has no method \'$name\'.');
+
+    return method;
   }
 
   @override
