@@ -1,6 +1,8 @@
 # dlox
 
-A Dart port of the Lox language interpreter (http://www.craftinginterpreters.com/).
+A Dart port of jlox, the Lox language's AST interpreter (http://www.craftinginterpreters.com/).
+
+See also [cclox](https://github.com/rkirsling/cclox) for my C++ port of the bytecode VM.
 
 Supported language extensions:
 - Block comments (`/* ... */`)
