@@ -23,28 +23,15 @@ String _typeOf(Object value) =>
   (value is LoxClass) ? 'class' :
   (value is LoxInstance) ? 'instance' : 'function';
 
-// TODO: Genericize once Dart 2 is available.
-double _castDouble(Object value, Token token, String message) =>
-  value is double ? value : throw new LoxError(token, message);
-
-String _castString(Object value, Token token, String message) =>
-  value is String ? value : throw new LoxError(token, message);
-
-LoxClass _castLoxClass(Object value, Token token, String message) =>
-  value is LoxClass ? value : throw new LoxError(token, message);
-
-LoxInstance _castLoxInstance(Object value, Token token, String message) =>
-  value is LoxInstance ? value : throw new LoxError(token, message);
-
-Callable _castCallable(Object value, Token token, String message) =>
-  value is Callable ? value : throw new LoxError(token, message);
+T _cast<T>(Object value, Token token, String message) =>
+  value is T ? value : throw LoxError(token, message);
 
 class Break implements Exception {}
 
 class Interpreter implements AstVisitor<Object> {
   final void Function(String) _print;
   final ErrorReporter _errorReporter;
-  Environment _environment = new Environment.root(prelude);
+  Environment _environment = Environment.root(prelude);
 
   Interpreter(this._print, this._errorReporter);
 
@@ -78,7 +65,7 @@ class Interpreter implements AstVisitor<Object> {
 
   @override
   void visitBlockStatement(BlockStatement node) {
-    interpretBlock(node.statements, new Environment.child(_environment));
+    interpretBlock(node.statements, Environment.child(_environment));
   }
 
   @override
@@ -104,12 +91,12 @@ class Interpreter implements AstVisitor<Object> {
 
   @override
   void visitBreakStatement(BreakStatement node) {
-    throw new Break();
+    throw Break();
   }
 
   @override
   void visitReturnStatement(ReturnStatement node) {
-    throw new Return(_evaluateOptional(node.expression));
+    throw Return(_evaluateOptional(node.expression));
   }
 
   @override
@@ -119,14 +106,14 @@ class Interpreter implements AstVisitor<Object> {
 
   @override
   void visitFunctionStatement(FunctionStatement node) {
-    _environment.define(node.identifier, new LoxFunction(node, _environment));
+    _environment.define(node.identifier, LoxFunction(node, _environment));
   }
 
   @override
   void visitClassStatement(ClassStatement node) {
     final superToken = node.superclass?.identifier;
-    final superclass = _evaluateOptionalToLoxClass(node.superclass, superToken, (type) => 'Cannot extend from $type.');
-    _environment.define(node.identifier, new LoxClass(node.identifier.lexeme, superclass, node.methods, _environment));
+    final superclass = _evaluateOptionalTo<LoxClass>(node.superclass, superToken, (type) => 'Cannot extend $type.');
+    _environment.define(node.identifier, LoxClass(node.identifier.lexeme, superclass, node.methods, _environment));
   }
 
   @override
@@ -153,15 +140,15 @@ class Interpreter implements AstVisitor<Object> {
 
   @override
   Object visitPropertyExpression(PropertyExpression node) {
-    final context = _evaluateToLoxInstance(node.context, node.identifier, (type) => 'Cannot get property of $type.');
+    final context = _evaluateTo<LoxInstance>(node.context, node.identifier, (type) => 'Cannot get property of $type.');
     return context[node.identifier];
   }
 
   @override
   Object visitCallExpression(CallExpression node) {
-    final callee = _evaluateToCallable(node.callee, node.parenthesis, (type) => 'Cannot call $type.');
+    final callee = _evaluateTo<Callable>(node.callee, node.parenthesis, (type) => 'Cannot call $type.');
     if (node.arguments.length != callee.arity) {
-      throw new LoxError(node.parenthesis, 'Expected ${callee.arity} arguments but found ${node.arguments.length}.');
+      throw LoxError(node.parenthesis, 'Expected ${callee.arity} arguments but found ${node.arguments.length}.');
     }
 
     final arguments = node.arguments.map(_evaluate).toList();
@@ -173,7 +160,7 @@ class Interpreter implements AstVisitor<Object> {
     final operand = _evaluate(node.operand);
 
     final op = node.operator.lexeme;
-    double asNumber(Object value) => _castDouble(value, node.operator, 'Cannot apply \'$op\' to ${_typeOf(value)}.');
+    double asNumber(Object value) => _cast<double>(value, node.operator, 'Cannot apply \'$op\' to ${_typeOf(value)}.');
 
     switch (node.operator.type) {
       case TokenType.bang:
@@ -194,8 +181,8 @@ class Interpreter implements AstVisitor<Object> {
     final rightOperand = _evaluate(node.rightOperand);
 
     final op = node.operator.lexeme;
-    double asNumber(Object value) => _castDouble(value, node.operator, 'Cannot apply \'$op\' to ${_typeOf(value)}.');
-    String asString(Object value) => _castString(value, node.operator, 'Cannot apply \'$op\' to ${_typeOf(value)}.');
+    double asNumber(Object value) => _cast<double>(value, node.operator, 'Cannot apply \'$op\' to ${_typeOf(value)}.');
+    String asString(Object value) => _cast<String>(value, node.operator, 'Cannot apply \'$op\' to ${_typeOf(value)}.');
 
     switch (node.operator.type) {
       case TokenType.$or:
@@ -204,7 +191,7 @@ class Interpreter implements AstVisitor<Object> {
         return rightOperand;
       case TokenType.slash:
         if (rightOperand == 0) {
-          throw new LoxError(node.operator, 'Cannot divide by zero.');
+          throw LoxError(node.operator, 'Cannot divide by zero.');
         }
         return asNumber(leftOperand) / asNumber(rightOperand);
       case TokenType.star:
@@ -253,7 +240,7 @@ class Interpreter implements AstVisitor<Object> {
     if (lhs is IdentifierExpression) {
       _environment.ancestor(lhs.depth)[lhs.identifier] = rhs;
     } else if (lhs is PropertyExpression) {
-      final context = _evaluateToLoxInstance(lhs.context, lhs.identifier, (type) => 'Cannot set property of $type.');
+      final context = _evaluateTo<LoxInstance>(lhs.context, lhs.identifier, (type) => 'Cannot set property of $type.');
       context[lhs.identifier] = rhs;
     } else {
       assert(false);
@@ -266,21 +253,15 @@ class Interpreter implements AstVisitor<Object> {
 
   Object _evaluateOptional(AstNode node) => node == null ? null : _evaluate(node);
 
-  // TODO: Genericize once Dart 2 is available.
-  LoxInstance _evaluateToLoxInstance(AstNode node, Token token, String Function(String) typedMessage) {
+  T _evaluateTo<T>(AstNode node, Token token, String Function(String) typedMessage) {
     final value = _evaluate(node);
-    return _castLoxInstance(value, token, typedMessage(_typeOf(value)));
+    return _cast<T>(value, token, typedMessage(_typeOf(value)));
   }
 
-  Callable _evaluateToCallable(AstNode node, Token token, String Function(String) typedMessage) {
-    final value = _evaluate(node);
-    return _castCallable(value, token, typedMessage(_typeOf(value)));
-  }
-
-  LoxClass _evaluateOptionalToLoxClass(AstNode node, Token token, String Function(String) typedMessage) {
+  T _evaluateOptionalTo<T>(AstNode node, Token token, String Function(String) typedMessage) {
     if (node == null) return null;
 
     final value = _evaluate(node);
-    return _castLoxClass(value, token, typedMessage(_typeOf(value)));
+    return _cast<T>(value, token, typedMessage(_typeOf(value)));
   }
 }

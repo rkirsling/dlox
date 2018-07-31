@@ -11,7 +11,7 @@ bool _isAlpha(int char) => (char >= $a && char <= $z) || (char >= $A && char <= 
 
 bool _isAlphanumeric(int char) => _isAlpha(char) || _isDigit(char);
 
-const Map<String, TokenType> _keywordTypes = const {
+const Map<String, TokenType> _keywordTypes = {
   'and': TokenType.$and,
   'break': TokenType.$break,
   'class': TokenType.$class,
@@ -133,13 +133,13 @@ class Scanner {
   }
 
   void _addToken(TokenType type) {
-    _tokens.add(new Token(type, _lexeme, _tokenLine, _tokenColumn));
+    _tokens.add(Token(type, _lexeme, _tokenLine, _tokenColumn));
   }
 
   void _addEofToken() {
     if (_tokens.isNotEmpty && _tokens.last.type == TokenType.eof) return;
 
-    _tokens.add(new Token(TokenType.eof, '', _line, _offset - _lineStart));
+    _tokens.add(Token(TokenType.eof, '', _line, _offset - _lineStart));
   }
 
   void _skipBlockComment() {

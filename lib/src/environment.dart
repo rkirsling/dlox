@@ -29,14 +29,14 @@ class Environment {
 
   void operator []=(Token identifier, Object value) {
     final name = identifier.lexeme;
-    if (!_scope.containsKey(name)) throw new LoxError(identifier, 'Identifier \'$name\' is undefined.');
+    if (!_scope.containsKey(name)) throw LoxError(identifier, 'Identifier \'$name\' is undefined.');
 
     _scope[name] = value;
   }
 
   Object operator [](Token identifier) {
     final name = identifier.lexeme;
-    if (!_scope.containsKey(name)) throw new LoxError(identifier, 'Identifier \'$name\' is undefined.');
+    if (!_scope.containsKey(name)) throw LoxError(identifier, 'Identifier \'$name\' is undefined.');
 
     return _scope[name];
   }

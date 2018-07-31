@@ -10,7 +10,7 @@ class _DerivedClass extends _Class {}
 
 class Resolver implements AstVisitor<void> {
   final ErrorReporter _errorReporter;
-  final List<Set<String>> _scopeStack = [new Set()];
+  final List<Set<String>> _scopeStack = [Set()];
   Set<String> _savedGlobals;
   _Loop _currentLoop;
   _Function _currentFunction;
@@ -24,7 +24,7 @@ class Resolver implements AstVisitor<void> {
   }
 
   void saveGlobals() {
-    _savedGlobals = new Set<String>.from(_scopeStack.first);
+    _savedGlobals = Set<String>.from(_scopeStack.first);
   }
 
   void restoreGlobals() {
@@ -43,7 +43,7 @@ class Resolver implements AstVisitor<void> {
 
   @override
   void visitBlockStatement(BlockStatement node) {
-    _scopeStack.add(new Set());
+    _scopeStack.add(Set());
     node.statements.forEach(_resolve);
     _scopeStack.removeLast();
   }
@@ -60,7 +60,7 @@ class Resolver implements AstVisitor<void> {
     _resolve(node.condition);
 
     final previous = _currentLoop;
-    _currentLoop = new _Loop();
+    _currentLoop = _Loop();
     _resolve(node.body);
     _currentLoop = previous;
   }
@@ -103,12 +103,12 @@ class Resolver implements AstVisitor<void> {
     _resolveOptional(node.superclass);
 
     final previous = _currentClass;
-    _currentClass = node.superclass != null ? new _DerivedClass() : new _Class();
-    _scopeStack.add(new Set());
+    _currentClass = node.superclass != null ? _DerivedClass() : _Class();
+    _scopeStack.add(Set());
     _scopeStack.last.add('this');
     if (node.superclass != null) _scopeStack.last.add('super');
 
-    final methodNames = new Set<String>();
+    final methodNames = Set<String>();
     for (final method in node.methods) {
       final name = method.identifier.lexeme;
       if (methodNames.contains(name)) _error(method.identifier, 'Method \'$name\' is already defined for this class.');
@@ -192,8 +192,8 @@ class Resolver implements AstVisitor<void> {
 
   void _resolveFunction(List<Token> parameters, List<Statement> statements, {bool isInitializer = false}) {
     final previous = _currentFunction;
-    _currentFunction = isInitializer ? new _Initializer() : new _Function();
-    _scopeStack.add(new Set());
+    _currentFunction = isInitializer ? _Initializer() : _Function();
+    _scopeStack.add(Set());
 
     parameters.forEach(_declare);
     statements.forEach(_resolve);

@@ -9,20 +9,20 @@ void main() {
   _getFile('../lib/src/ast.dart').writeAsStringSync(output);
 }
 
-File _getFile(String path) => new File.fromUri(Platform.script.resolve(path));
+File _getFile(String path) => File.fromUri(Platform.script.resolve(path));
 
 String _generateAstModel(Map<String, Map> inputMap) {
-  final preamble = new StringBuffer()
+  final preamble = StringBuffer()
     ..writeln('// DO NOT EDIT -- This file is generated from ast.yaml.')
     ..writeln('import \'token.dart\';')
     ..writeln()
     ..writeln('abstract class Resolvable { int depth; }');
 
-  final visitor = new StringBuffer()
+  final visitor = StringBuffer()
     ..writeln()
     ..writeln('abstract class AstVisitor<R> {');
 
-  final nodes = new StringBuffer()
+  final nodes = StringBuffer()
     ..writeln()
     ..writeln('abstract class AstNode {')
     ..writeln('  R accept<R>(AstVisitor<R> visitor);')
@@ -34,7 +34,7 @@ String _generateAstModel(Map<String, Map> inputMap) {
       ..writeln('abstract class $baseName extends AstNode {}');
 
     // Sort class names.
-    new SplayTreeMap<String, List<String>>.from(classes).forEach((signature, fields) {
+    SplayTreeMap<String, List<String>>.from(classes).forEach((signature, fields) {
       final endOfClassName = signature.indexOf(' ');
       final className = endOfClassName == -1 ? signature : signature.substring(0, endOfClassName);
       final interfacesAndMixins = endOfClassName == -1 ? '' : signature.substring(endOfClassName);

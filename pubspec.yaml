@@ -3,8 +3,8 @@ description: A Dart port of the Lox language interpreter (http://www.craftingint
 author: Ross Kirsling <rkirsling@gmail.com>
 homepage: https://github.com/rkirsling/dlox
 dependencies:
-  charcode: ^1.1.1
+  charcode: ^1.1.2
 dev_dependencies:
-  yaml: ^2.1.13
+  yaml: ^2.1.15
 executables:
   dlox: main

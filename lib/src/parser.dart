@@ -4,7 +4,7 @@ import 'token.dart';
 
 String _stringParse(String literal) => literal.substring(1, literal.length - 1);
 
-const List<TokenType> _statementOpeners = const [
+const List<TokenType> _statementOpeners = [
   TokenType.leftBrace,
   TokenType.$break,
   TokenType.$class,
@@ -46,14 +46,14 @@ class Parser {
 
   ClassStatement _parseClass() {
     final identifier = _expectIdentifier('class');
-    final superclass = _advanceIf(TokenType.less) ? new IdentifierExpression(_expectIdentifier('superclass')) : null;
+    final superclass = _advanceIf(TokenType.less) ? IdentifierExpression(_expectIdentifier('superclass')) : null;
     _expect(TokenType.leftBrace, 'Expected \'{\' before class body.');
 
     final methods = <FunctionStatement>[];
     while (!_peekIs(TokenType.rightBrace) && !_isAtEnd()) methods.add(_parseMethod());
 
     _expect(TokenType.rightBrace, 'Expected \'}\' after class body.');
-    return new ClassStatement(identifier, superclass, methods);
+    return ClassStatement(identifier, superclass, methods);
   }
 
   FunctionStatement _parseMethod() {
@@ -75,14 +75,14 @@ class Parser {
 
     _expect(TokenType.leftBrace, 'Expected \'{\'.');
     final statements = _parseBlock().statements;
-    return new FunctionStatement(identifier, parameters, statements);
+    return FunctionStatement(identifier, parameters, statements);
   }
 
   VariableStatement _parseVariable() {
     final identifier = _expectIdentifier('variable');
     final initializer = _advanceIf(TokenType.equal) ? _parseExpression() : null;
     _expectSemicolon();
-    return new VariableStatement(identifier, initializer);
+    return VariableStatement(identifier, initializer);
   }
 
   Statement _parseNonDeclaration() =>
@@ -98,13 +98,13 @@ class Parser {
     final keyword = _advance();
     final expression = _peekIs(TokenType.semicolon) ? null : _parseExpression();
     _expectSemicolon();
-    return new ReturnStatement(keyword, expression);
+    return ReturnStatement(keyword, expression);
   }
 
   BreakStatement _parseBreak() {
     final keyword = _advance();
     _expectSemicolon();
-    return new BreakStatement(keyword);
+    return BreakStatement(keyword);
   }
 
   /// Desugars `for` into `while`.
@@ -114,17 +114,17 @@ class Parser {
       _advanceIf(TokenType.semicolon) ? null :
       _advanceIf(TokenType.$var) ? _parseVariable() : _parseExpressionStatement();
 
-    final condition = _peekIs(TokenType.semicolon) ? new LiteralExpression(true) : _parseExpression();
+    final condition = _peekIs(TokenType.semicolon) ? LiteralExpression(true) : _parseExpression();
     _expectSemicolon();
 
-    final increment = _peekIs(TokenType.rightParen) ? null : new ExpressionStatement(_parseExpression());
+    final increment = _peekIs(TokenType.rightParen) ? null : ExpressionStatement(_parseExpression());
     _expect(TokenType.rightParen, 'Expected \')\' after \'for\' loop header.');
 
     final rawBody = _parseNonDeclaration();
-    final body = (increment == null) ? rawBody : new BlockStatement([rawBody, increment]);
+    final body = (increment == null) ? rawBody : BlockStatement([rawBody, increment]);
 
-    final rawWhile = new WhileStatement(condition, body);
-    return (initializer == null) ? rawWhile : new BlockStatement([initializer, rawWhile]);
+    final rawWhile = WhileStatement(condition, body);
+    return (initializer == null) ? rawWhile : BlockStatement([initializer, rawWhile]);
   }
 
   WhileStatement _parseWhile() {
@@ -133,7 +133,7 @@ class Parser {
     _expect(TokenType.rightParen, 'Expected \')\' after \'while\' condition.');
 
     final body = _parseNonDeclaration();
-    return new WhileStatement(condition, body);
+    return WhileStatement(condition, body);
   }
 
   IfStatement _parseIf() {
@@ -143,7 +143,7 @@ class Parser {
 
     final consequent = _parseNonDeclaration();
     final alternative = _advanceIf(TokenType.$else) ? _parseNonDeclaration() : null;
-    return new IfStatement(condition, consequent, alternative);
+    return IfStatement(condition, consequent, alternative);
   }
 
   BlockStatement _parseBlock() {
@@ -151,19 +151,19 @@ class Parser {
     while (!_peekIs(TokenType.rightBrace) && !_isAtEnd()) statements.add(_parseStatement(inBlock: true));
 
     _expect(TokenType.rightBrace, 'Expected \'}\'.');
-    return new BlockStatement(statements);
+    return BlockStatement(statements);
   }
 
   PrintStatement _parsePrint() {
     final expression = _parseExpression();
     _expectSemicolon();
-    return new PrintStatement(expression);
+    return PrintStatement(expression);
   }
 
   ExpressionStatement _parseExpressionStatement() {
     final expression = _parseExpression();
     _expectSemicolon();
-    return new ExpressionStatement(expression);
+    return ExpressionStatement(expression);
   }
 
   Expression _parseExpression() => _parseAssignment();
@@ -174,11 +174,11 @@ class Parser {
 
     final operator = _advance();
     if (expression is! PropertyExpression && expression is! IdentifierExpression) {
-      throw new LoxError(operator, 'Invalid left-hand side of assignment.');
+      throw LoxError(operator, 'Invalid left-hand side of assignment.');
     }
 
     final rhs = _parseAssignment();
-    return new AssignmentExpression(expression, rhs);
+    return AssignmentExpression(expression, rhs);
   }
 
   Expression _parseTernary() {
@@ -188,7 +188,7 @@ class Parser {
     final consequent = _parseAssignment();
     _expect(TokenType.colon, 'Expected \':\' for ternary operator.');
     final alternative = _parseAssignment();
-    return new TernaryExpression(expression, consequent, alternative);
+    return TernaryExpression(expression, consequent, alternative);
   }
 
   Expression _parseOr() =>
@@ -215,7 +215,7 @@ class Parser {
     while (_peekIsIn(operators)) {
       final operator = _advance();
       final rightOperand = parseOperand();
-      expression = new BinaryExpression(expression, operator, rightOperand);
+      expression = BinaryExpression(expression, operator, rightOperand);
     }
 
     return expression;
@@ -226,7 +226,7 @@ class Parser {
 
     final operator = _advance();
     final operand = _parseUnary();
-    return new UnaryExpression(operator, operand);
+    return UnaryExpression(operator, operand);
   }
 
   Expression _parseCallOrProperty() {
@@ -238,12 +238,12 @@ class Parser {
       if (operator.type == TokenType.leftParen) {
         final arguments = _parseParameterOrArgumentList(_parseExpression);
         _expect(TokenType.rightParen, 'Expected \')\' after argument list.');
-        expression = new CallExpression(expression, operator, arguments);
+        expression = CallExpression(expression, operator, arguments);
         continue;
       }
 
       final identifier = _expectIdentifier('property');
-      expression = new PropertyExpression(expression, identifier);
+      expression = PropertyExpression(expression, identifier);
     }
 
     return expression;
@@ -255,27 +255,27 @@ class Parser {
     return
       _peekIs(TokenType.$super) ? _parseSuper() :
       _advanceIf(TokenType.leftParen) ? _parseParenthesized() :
-      _advanceIf(TokenType.identifier) ? new IdentifierExpression(token) :
-      _advanceIf(TokenType.$this) ? new ThisExpression(token) :
-      _advanceIf(TokenType.$nil) ? new LiteralExpression(null) :
-      _advanceIf(TokenType.$true) ? new LiteralExpression(true) :
-      _advanceIf(TokenType.$false) ? new LiteralExpression(false) :
-      _advanceIf(TokenType.string) ? new LiteralExpression(_stringParse(token.lexeme)) :
-      _advanceIf(TokenType.number) ? new LiteralExpression(double.parse(token.lexeme)) :
-        throw new LoxError(token, _isAtEnd() ? 'Unexpected end of input.' : 'Unexpected token \'${token.lexeme}\'.');
+      _advanceIf(TokenType.identifier) ? IdentifierExpression(token) :
+      _advanceIf(TokenType.$this) ? ThisExpression(token) :
+      _advanceIf(TokenType.$nil) ? LiteralExpression(null) :
+      _advanceIf(TokenType.$true) ? LiteralExpression(true) :
+      _advanceIf(TokenType.$false) ? LiteralExpression(false) :
+      _advanceIf(TokenType.string) ? LiteralExpression(_stringParse(token.lexeme)) :
+      _advanceIf(TokenType.number) ? LiteralExpression(double.parse(token.lexeme)) :
+        throw LoxError(token, _isAtEnd() ? 'Unexpected end of input.' : 'Unexpected token \'${token.lexeme}\'.');
   }
 
   SuperExpression _parseSuper() {
     final keyword = _advance();
     _expect(TokenType.dot, 'Expected \'.\' after \'super\'.');
     final identifier = _expectIdentifier('superclass method');
-    return new SuperExpression(keyword, identifier);
+    return SuperExpression(keyword, identifier);
   }
 
   ParenthesizedExpression _parseParenthesized() {
     final expression = _parseExpression();
     _expect(TokenType.rightParen, 'Expected \')\'.');
-    return new ParenthesizedExpression(expression);
+    return ParenthesizedExpression(expression);
   }
 
   List<T> _parseParameterOrArgumentList<T>(T Function() parseItem) {
@@ -308,7 +308,7 @@ class Parser {
   }
 
   void _expect(TokenType type, String errorMessage) {
-    if (!_peekIs(type)) throw new LoxError(_peek(), errorMessage);
+    if (!_peekIs(type)) throw LoxError(_peek(), errorMessage);
 
     _advance();
   }
@@ -323,7 +323,7 @@ class Parser {
   }
 
   Token _expectIdentifier(String kind) {
-    if (!_peekIs(TokenType.identifier)) throw new LoxError(_peek(), 'Expected $kind name.');
+    if (!_peekIs(TokenType.identifier)) throw LoxError(_peek(), 'Expected $kind name.');
 
     return _advance();
   }

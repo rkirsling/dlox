@@ -17,5 +17,5 @@ class _NativeFunction implements Callable {
 }
 
 final Map<String, Object> prelude = {
-  'clock': new _NativeFunction(0, () => new DateTime.now().millisecondsSinceEpoch / 1000)
+  'clock': _NativeFunction(0, () => DateTime.now().millisecondsSinceEpoch / 1000)
 };

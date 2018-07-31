@@ -3,8 +3,8 @@ import 'environment.dart';
 import 'error_reporter.dart';
 import 'token.dart';
 
-const Token $this = const Token(TokenType.$this, 'this', null, null);
-const Token $super = const Token(TokenType.$super, 'super', null, null);
+const Token $this = Token(TokenType.$this, 'this', null, null);
+const Token $super = Token(TokenType.$super, 'super', null, null);
 
 typedef InterpretFunction = void Function(List<Statement>, Environment);
 
@@ -32,7 +32,7 @@ class LoxFunction implements Callable {
 
   @override
   Object call(InterpretFunction interpret, List arguments) {
-    final environment = new Environment.child(_closure);
+    final environment = Environment.child(_closure);
     for (var i = 0; i < arity; i++) environment.define(_declaration.parameters[i], arguments[i]);
 
     try {
@@ -47,10 +47,10 @@ class LoxFunction implements Callable {
   LoxFunction bind(LoxInstance context) {
     assert(_class != null);
 
-    final environment = new Environment.child(_closure)..define($this, context);
+    final environment = Environment.child(_closure)..define($this, context);
     if (_class.superclass != null) environment.define($super, _class.superclass);
 
-    return new LoxFunction(_declaration, environment);
+    return LoxFunction(_declaration, environment);
   }
 
   @override
@@ -63,7 +63,7 @@ class LoxClass implements Callable {
   final Map<String, LoxFunction> _methods = {};
 
   LoxClass(this.name, this.superclass, List<FunctionStatement> methods, Environment environment) {
-    for (final method in methods) _methods[method.identifier.lexeme] = new LoxFunction(method, environment, this);
+    for (final method in methods) _methods[method.identifier.lexeme] = LoxFunction(method, environment, this);
   }
 
   @override
@@ -71,7 +71,7 @@ class LoxClass implements Callable {
 
   @override
   Object call(InterpretFunction interpret, List arguments) {
-    final instance = new LoxInstance(this);
+    final instance = LoxInstance(this);
 
     final initializer = _methods['init']?.bind(instance);
     if (initializer != null) initializer.call(interpret, arguments);
@@ -94,17 +94,17 @@ class LoxInstance {
 
   void operator []=(Token identifier, Object value) {
     final name = identifier.lexeme;
-    if (name == 'init') throw new LoxError(identifier, 'Cannot overwrite class initializer.');
+    if (name == 'init') throw LoxError(identifier, 'Cannot overwrite class initializer.');
 
     _fields[name] = value;
   }
 
   Object operator [](Token identifier) {
     final name = identifier.lexeme;
-    if (name == 'init') throw new LoxError(identifier, 'Cannot access class initializer.');
+    if (name == 'init') throw LoxError(identifier, 'Cannot access class initializer.');
 
     final value = _fields[name] ?? _class.findMethod(this, name);
-    if (value == null) throw new LoxError(identifier, 'Property \'$name\' is undefined.');
+    if (value == null) throw LoxError(identifier, 'Property \'$name\' is undefined.');
 
     return value;
   }
@@ -114,7 +114,7 @@ class LoxInstance {
     assert(_class.superclass != null);
 
     final method = _class.superclass.findMethod(this, name);
-    if (method == null) throw new LoxError(identifier, 'Superclass has no method \'$name\'.');
+    if (method == null) throw LoxError(identifier, 'Superclass has no method \'$name\'.');
 
     return method;
   }
